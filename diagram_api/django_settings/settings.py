@@ -38,7 +38,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # ВЫКЛЮЧИТЬ МЕНЯ ПОТОМ
-# CORS_ALLOW_ALL_ORIGINS: True
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Application definition
 
