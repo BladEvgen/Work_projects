@@ -1,8 +1,12 @@
+import datetime
+
 from django.http import JsonResponse
+from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+from . import models, utils
 from .config import execute_query, get_database_connection
-import datetime
 
 STUDENTS = {
     "students": "isStudent = 1",
@@ -26,13 +30,13 @@ def home(request):
 @api_view(["GET"])
 def specialty_api(request):
     global cache
-    response_data = {"diagram_1": {}, "diagram_3": {}}
+    response_data = {"diagram_1": {}, "diagram_3": {}, "diagram_4": {}}
     try:
         start_time = datetime.datetime.now()
         if (
             cache["last_updated"] is None
-            or (datetime.datetime.now() - cache["last_updated"]).seconds > 1800
-        ):  # Check if cache is expired (30 minutes)
+            or (datetime.datetime.now() - cache["last_updated"]).seconds > 10
+        ):
             print(
                 "No cache available or cache expired. Fetching data from the database..."
             )
@@ -49,9 +53,13 @@ def specialty_api(request):
                     )
                     response_data["diagram_3"][k] = count
 
-            # Update cache
+            debtors = models.Debtors.objects.all()
+
+            for d in debtors:
+                response_data["diagram_4"][d.name] = d.count
             cache["data"] = response_data
             cache["last_updated"] = datetime.datetime.now()
+
         else:
             print("Using cached data...")
             response_data = cache["data"]
@@ -62,3 +70,17 @@ def specialty_api(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
     return Response(response_data)
+
+
+def load_data(request):
+    if request.method == "POST":
+        excel_file = request.FILES["file"]
+        data = utils.count_debtors(excel_file)
+
+        models.Debtors.objects.all().delete()
+
+        for key, value in data.items():
+            debtor = models.Debtors(name=key, count=value)
+            debtor.save()
+
+    return render(request, "load_data.html", {})
