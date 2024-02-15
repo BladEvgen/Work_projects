@@ -19,7 +19,6 @@ STUDENTS = {
 
 TUTORS = {"tutor": "isStudent = 0"}
 
-# Cache for storing data
 cache = {"last_updated": None, "data": None}
 
 
