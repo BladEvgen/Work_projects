@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-YtB5KDpRqrwli6bDsiLEW3kVc9qlGvxa7nRTlvJwwnuFq0cG61V1+wspW6jc7lC+" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: auto;
+            width: 100%;
+        }
+
+        .chart-container li {
+            margin-left: 2%;
+        }
+
+        .card-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            background-color: #123075;
+            color: #fff;
+            padding: 10px;
+        }
+
+        .row-cols-2>* {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .row-cols-2 {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+
+        .col {
+            padding: 0 10px;
+        }
+
+        .data {
+            max-width: 100%;
+            display: flex;
+            list-style-type: none;
+            flex-wrap: wrap;
+        }
+
+        .dataPie {
+            list-style-type: none;
+            max-width: 100%;
+            display: flex;
+        }
+
+        .data ul {
+            width: calc(100% / 9);
+            overflow-wrap: break-word;
+        }
+
+        .data ul:first-child {
+            display: none;
+        }
+
+        .data li {
+            overflow-wrap: break-word;
+        }
+
+        .data span {
+            font-weight: bold;
+        }
+
+        .dataPie span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <div class="row row-cols-2">
+            <div class="row">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Студенты по факультетам</h5>
+                        <div class="chart-container">
+                            <canvas id="pieChart"></canvas>
+                            <div class="dataPie" id="pieData"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Количество Должников</h5>
+                        <div class="chart-container">
+                            <canvas id="barChart"></canvas>
+                            <div class="data" id="barData"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fetchData() {
+            fetch('http://localhost:5000/api/diagram/')
+                .then(response => response.json())
+                .then(data => {
+                    const diagram1Data = data.diagram_1;
+                    delete diagram1Data['students'];
+                    const pieLabels = Object.keys(diagram1Data).map(key => {
+                        switch (key) {
+                            case 'students':
+                                return 'Всего студентов';
+                            case 'om':
+                                return 'Общая медицина';
+                            case 'stom':
+                                return 'Стоматология';
+                            case 'farm':
+                                return 'Фармация';
+                            case 'small_faculty':
+                                return 'Маленькие факультеты';
+                            case 'rez_mag_doc':
+                                return 'Резидентура, Магистратура и Докторантура';
+                            default:
+                                return key;
+                        }
+                    });
+                    const pieValues = Object.values(diagram1Data);
+
+                    const pieDataElement = document.getElementById('pieData');
+                    pieDataElement.innerHTML = '<ul>';
+                    pieLabels.forEach((label, index) => {
+                        pieDataElement.innerHTML += `<li>${label}: <span>${pieValues[index]}</span></li>`;
+                    });
+                    pieDataElement.innerHTML += '</ul>';
+
+
+                    const pieChartCanvas = document.getElementById('pieChart').getContext('2d');
+                    new Chart(pieChartCanvas, {
+                        type: 'pie',
+                        data: {
+                            labels: pieLabels,
+                            datasets: [{
+                                data: pieValues,
+                                backgroundColor: [
+                                    'rgba(54, 162, 235, 0.6)',
+                                    'rgba(255, 206, 86, 0.6)',
+                                    'rgba(75, 192, 192, 0.6)',
+                                    'rgba(255, 99, 132, 0.6)',
+                                    'rgba(255, 159, 64, 0.6)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            aspectRatio: 3,
+
+                            legend: {
+                                display: true,
+
+                            }
+                        }
+                    });
+
+                    const diagram4Data = data.diagram_4;
+                    const barLabels = Object.keys(diagram4Data).map(key => {
+                        switch (key) {
+                            case 'om':
+                                return 'Общая медицина';
+                            case 'stom':
+                                return "Стоматология";
+                            case 'oz':
+                                return 'Общественное здравоохранение';
+                            case 'farm':
+                                return 'Фармация';
+                            case 'sd':
+                                return 'Сестринское дело';
+                            case 'internatura':
+                                return 'Интернатура';
+                            case 'rezidentura':
+                                return 'Резидентура';
+                            case 'magistratura':
+                                return 'Магистратура';
+                            case 'doktorantura':
+                                return 'Докторантура';
+                            default:
+                                return key;
+                        }
+                    });
+                    const barValues = Object.values(diagram4Data);
+
+                    const barDataElement = document.getElementById('barData');
+                    barDataElement.innerHTML = '<ul>';
+                    barLabels.forEach((label, index) => {
+                        barDataElement.innerHTML += `<li>${label}: <span>${barValues[index]}</span></li>`;
+                    });
+                    barDataElement.innerHTML += '</ul>';
+
+
+                    const barColors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet', 'pink', 'brown', 'grey'];
+                    const barChartCanvas = document.getElementById('barChart').getContext('2d');
+                    new Chart(barChartCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: barLabels,
+                            datasets: [{
+                                label: 'Количество студентов',
+                                data: barValues,
+                                backgroundColor: barColors,
+                                borderWidth: 1,
+                                display: true
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            },
+                            aspectRatio: 3
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        fetchData();
+
+        setInterval(() => {
+            location.reload();
+        }, 60 * 60 * 1000); // 60 минут * 60 секунд * 1000 миллисекунд = 1 час
+
+        setInterval(() => {
+            fetchData();
+        }, 30 * 60 * 1000); // 30 минут * 60 секунд * 1000 миллисекунд = 30 минут
+    </script>
+</body>
+
+</html>
