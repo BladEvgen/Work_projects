@@ -6,12 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title></title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-YtB5KDpRqrwli6bDsiLEW3kVc9qlGvxa7nRTlvJwwnuFq0cG61V1+wspW6jc7lC+" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
+        }
+
+        .card {
+            margin-bottom: 20px;
         }
 
         .chart-container {
@@ -21,13 +25,8 @@
             width: 100%;
         }
 
-        .chart-container li {
-            margin-left: 2%;
-        }
-
         .card-title {
             text-align: center;
-            margin-bottom: 20px;
             font-size: 20px;
             font-weight: bold;
             background-color: #123075;
@@ -40,56 +39,70 @@
             max-width: 50%;
         }
 
-        .row-cols-2 {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -10px;
-        }
-
-        .col {
-            padding: 0 10px;
-        }
-
-        .data {
-            max-width: 100%;
-            display: flex;
-            list-style-type: none;
-            flex-wrap: wrap;
-        }
-
+        .data,
         .dataPie {
-            list-style-type: none;
             max-width: 100%;
             display: flex;
+            list-style-type: none;
+            flex-wrap: wrap;
         }
 
-        .data ul {
+        .data ul,
+        .dataPie ul {
             width: calc(100% / 9);
             overflow-wrap: break-word;
         }
 
-        .data ul:first-child {
+        .data ul:first-child,
+        .dataPie ul:first-child {
             display: none;
         }
 
-        .data li {
+        .data li,
+        .dataPie li {
             overflow-wrap: break-word;
         }
 
-        .data span {
+        .data span,
+        .dataPie span {
             font-weight: bold;
         }
 
-        .dataPie span {
-            font-weight: bold;
+        #markChart {
+            max-height: calc((90vh - 300px) * 0.8);
+            width: 100%;
+            display: block;
+        }
+
+        .mark-container {
+            width: 80%;
+            margin: auto;
+        }
+
+        #chartForm {
+            margin-top: 20px;
+            max-width: 400px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #chartForm .mb-3 {
+            width: 100%;
+        }
+
+        #chartForm button {
+            margin-top: 10px;
+            width: 100%;
         }
     </style>
 </head>
 
 <body>
-    <div class="container mt-5">
+    <div class="container-fluid">
         <div class="row row-cols-2">
-            <div class="row">
+            <div class="col">
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Студенты по факультетам</h5>
@@ -100,7 +113,7 @@
                     </div>
                 </div>
             </div>
-            <div class="row">
+            <div class="col">
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Количество Должников</h5>
@@ -110,6 +123,32 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="row">
+            <h5 class="card-title">Тенденция оценок</h5>
+            <div class="mark-container">
+                <div class="message-container d-flex align-items-center justify-content-center mx-auto mt-auto"></div>
+                <div class="col">
+                    <canvas id="markChart"></canvas>
+                </div>
+            </div>
+            <div class="col">
+                <form id="chartForm">
+                    <div class="mb-3">
+                        <label for="iinInput" class="form-label">ИИН:</label>
+                        <input type="text" class="form-control" id="iinInput" name="iin">
+                    </div>
+                    <div class="mb-3">
+                        <label for="dateRangeSelect" class="form-label">Выберите диапазон дат:</label>
+                        <select class="form-select" id="dateRangeSelect" name="date_range">
+                            <option value="1">На 1 день</option>
+                            <option value="7" selected>На 7 дней</option>
+                            <option value="30">На 30 дней</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Отправить</button>
+                </form>
             </div>
         </div>
     </div>
@@ -248,7 +287,146 @@
         setInterval(() => {
             fetchData();
         }, 30 * 60 * 1000); // 30 минут * 60 секунд * 1000 миллисекунд = 30 минут
+
+        function generateColor() {
+            function random(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            let r = random(0, 255);
+            let g = random(0, 255);
+            let b = random(0, 255);
+
+            if ((r > 200 && g > 200 && b > 200) || (r < 100 && g < 100 && b < 100)) {
+                return generateColor();
+            }
+
+            for (let color of generatedColors) {
+                let [oldR, oldG, oldB] = color.match(/\d+/g).map(Number);
+                if (Math.abs(r - oldR) + Math.abs(g - oldG) + Math.abs(b - oldB) < 255 * 0.05) {
+                    return generateColor();
+                }
+            }
+
+            let newColor = `rgba(${r}, ${g}, ${b}, ${random(35, 60) / 100})`;
+            generatedColors.push(newColor);
+
+            return newColor;
+        }
+
+        let generatedColors = [];
+
+        let markChart = null;
+
+        window.onload = function () {
+            fetchChart();
+
+            document.getElementById("chartForm").addEventListener("submit", function (event) {
+                event.preventDefault(); // Предотвращаем отправку формы по умолчанию
+
+                let formData = new FormData(this);
+
+                fetchChart(formData);
+            });
+        };
+
+        function fetchChart(formData = null) {
+            let url = 'http://localhost:5000/api/get_marks/';
+            if (formData) {
+                url += '?' + new URLSearchParams(formData);
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // Уничтожаем предыдущий график, если он существует
+                    if (markChart) {
+                        markChart.destroy();
+                    }
+
+                    let messages = document.querySelectorAll('.alert-danger');
+                    messages.forEach(message => message.remove());
+
+                    let labels = Object.keys(data.tutor_diagram);
+                    let marksCount = {};
+
+                    labels.forEach(label => {
+                        if (data.tutor_diagram[label].marks === null) {
+                            let messageBlock = document.createElement('div');
+                            messageBlock.className = 'alert alert-danger';
+                            messageBlock.role = 'alert';
+                            messageBlock.innerText = `Нет оценок у преподавателя: ${data.tutor_diagram[label].fullName}`;
+
+                            let messageContainer = document.querySelector('.message-container');
+                            messageContainer.appendChild(messageBlock);
+                        } else {
+                            data.tutor_diagram[label].marks.forEach(mark => {
+                                if (marksCount[mark]) {
+                                    marksCount[mark]++;
+                                } else {
+                                    marksCount[mark] = 1;
+                                }
+                            });
+                        }
+                    });
+
+
+                    // Находим оценку, которая встречается наиболее часто
+                    let mostFrequentMark = Object.keys(marksCount).reduce((a, b) => marksCount[a] > marksCount[b] ? a : b);
+
+                    let marks = Object.keys(marksCount);
+                    let counts = Object.values(marksCount);
+
+                    let ctx = document.getElementById('markChart');
+                    markChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: marks,
+                            datasets: [{
+                                label: 'Частота оценок',
+                                data: counts,
+                                fill: true,
+                                borderColor: generateColor(),
+                                backgroundColor: generateColor(), // убрать если не нравится дизайн
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Оценки'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Количество оценок'
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    console.log('Самая часто встречающаяся оценка:', mostFrequentMark);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
     </script>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"
+    integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+"
+    crossorigin="anonymous"></script>
 
 </html>
