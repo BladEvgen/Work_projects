@@ -14,10 +14,6 @@
             font-family: 'Roboto', sans-serif;
         }
 
-        .card {
-            margin-bottom: 20px;
-        }
-
         .chart-container {
             position: relative;
             margin: auto;
@@ -32,11 +28,6 @@
             background-color: #123075;
             color: #fff;
             padding: 10px;
-        }
-
-        .row-cols-2>* {
-            flex: 0 0 50%;
-            max-width: 50%;
         }
 
         .data,
@@ -61,6 +52,7 @@
         .data li,
         .dataPie li {
             overflow-wrap: break-word;
+            margin-right: 20px;
         }
 
         .data span,
@@ -69,7 +61,7 @@
         }
 
         #markChart {
-            max-height: calc((90vh - 300px) * 0.8);
+            max-height: calc((90vh - 250px) * 0.8);
             width: 100%;
             display: block;
         }
@@ -183,7 +175,7 @@
                     const pieDataElement = document.getElementById('pieData');
                     pieDataElement.innerHTML = '<ul>';
                     pieLabels.forEach((label, index) => {
-                        pieDataElement.innerHTML += `<li>${label}: <span>${pieValues[index]}</span></li>`;
+                        pieDataElement.innerHTML += `<li> ${label}: <span>${pieValues[index]} </span> </li> `;
                     });
                     pieDataElement.innerHTML += '</ul>';
 
@@ -246,7 +238,7 @@
                     const barDataElement = document.getElementById('barData');
                     barDataElement.innerHTML = '<ul>';
                     barLabels.forEach((label, index) => {
-                        barDataElement.innerHTML += `<li>${label}: <span>${barValues[index]}</span></li>`;
+                        barDataElement.innerHTML += `<li>${label}: <span>${barValues[index]}</span></li> `;
                     });
                     barDataElement.innerHTML += '</ul>';
 
@@ -286,6 +278,7 @@
 
         setInterval(() => {
             fetchData();
+            fetchChart();
         }, 30 * 60 * 1000); // 30 минут * 60 секунд * 1000 миллисекунд = 30 минут
 
         function generateColor() {

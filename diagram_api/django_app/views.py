@@ -142,7 +142,7 @@ def get_marks_for_tutor(request):
             "tutor_count_without_marks": tutor_count_without_marks,
         }
 
-        django_cache.set(f"{iin}_{date_range}", response, 30)
+        django_cache.set(f"{iin}_{date_range}", response, 300)
 
         return Response(response)
 
