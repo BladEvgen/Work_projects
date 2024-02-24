@@ -33,7 +33,7 @@
                 }
             }
 
-            let newColor = `rgba(${r}, ${g}, ${b}, ${random(60, 90) / 100})`;
+            let newColor = `rgba(${r}, ${g}, ${b}, ${random(65, 90) / 100})`;
             generatedColors.push(newColor);
 
             return newColor;
@@ -41,11 +41,18 @@
 
         let generatedColors = [];
 
-        function fetchData() {
+        window.onload = function () {
             fetch('http://localhost:5000/api/get_marks/')
                 .then(response => response.json())
                 .then(data => {
                     let labels = Object.keys(data.tutor_diagram);
+                    const n = 7;
+                    // Создаем массив из N случайных индексов
+                    let indices = [];
+                    while (indices.length < n) {
+                        var r = Math.floor(Math.random() * labels.length);
+                        if (indices.indexOf(r) === -1) indices.push(r);
+                    }
                     let datasets = labels.map((label, index) => {
                         return {
                             label: data.tutor_diagram[label].fullName,
@@ -53,7 +60,7 @@
                             fill: false,
                             borderColor: generateColor(),
                             tension: 0.1,
-                            hidden: index >= 7
+                            hidden: indices.indexOf(index) === -1 // Скрываем все ключи, которые не входят в выбранные N
                         };
                     });
 
@@ -74,7 +81,8 @@
                                     position: 'top',
                                     labels: {
                                         filter: function (item, chart) {
-                                            return item.datasetIndex < 7;
+                                            // Возвращаем true только для выбранных N наборов данных
+                                            return indices.indexOf(item.datasetIndex) !== -1;
                                         }
                                     },
                                     onClick: function (e, legendItem) {
@@ -119,17 +127,6 @@
                     });
                 })
                 .catch(error => console.error('Error:', error));
-        }
-
-        window.onload = function () {
-            fetchData();
-
-            setInterval(() => {
-                location.reload();
-            }, 60 * 60 * 1000);
-            setInterval(() => {
-                fetchData();
-            }, 30 * 60 * 1000);
         };
 
     </script>
