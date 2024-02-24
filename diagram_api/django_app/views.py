@@ -95,7 +95,7 @@ def load_data(request):
 @csrf_exempt
 def get_marks_for_tutor(request):
     try:
-        iin = request.GET.get("iin")
+        iin = request.GET.get("iin", None)
         date_range = request.GET.get("date_range", "7")
         date_filter = datetime.datetime.now() - datetime.timedelta(days=int(date_range))
 
@@ -108,14 +108,14 @@ def get_marks_for_tutor(request):
         with closing(platonus_connection()) as platonus_conn, closing(
             journal_connection()
         ) as journal_conn:
+            tutor_query = "SELECT DISTINCT tutorID, lastname, firstname FROM users"
             if iin:
-                tutor_query = f"SELECT tutorID, lastname, firstname FROM users WHERE IIN = '{iin}'"
-            else:
-                tutor_query = "SELECT DISTINCT tutorID, lastname, firstname FROM users"
+                tutor_query += f" WHERE IIN = '{iin}'"
             tutor_ids = execute_query(platonus_conn, tutor_query, many=True)
 
             tutor_diagram = {}
-            no_scores = []
+            tutor_count_with_marks = 0
+            tutor_count_without_marks = 0
             for tutor_id, lastname, firstname in tutor_ids:
                 if tutor_id is not None:
                     marks_query = f"SELECT Mark FROM marks_from_journal WHERE tutorID = '{tutor_id}' AND Date >= '{date_filter_str}'"
@@ -126,12 +126,20 @@ def get_marks_for_tutor(request):
                             "fullName": f"{lastname}_{firstname}",
                             "marks": [mark[0] for mark in marks],
                         }
+                        tutor_count_with_marks += 1
                     else:
-                        no_scores.append(tutor_id)
+                        if iin:
+                            tutor_diagram[tutor_id] = {
+                                "fullName": f"{lastname}_{firstname}",
+                                "marks": None,
+                            }
+                        tutor_count_without_marks += 1
 
-        response = {"tutor_diagram": tutor_diagram}
-        if no_scores:
-            response["no_scores"] = no_scores
+        response = {
+            "tutor_diagram": tutor_diagram,
+            "tutor_count_with_marks": tutor_count_with_marks,
+            "tutor_count_without_marks": tutor_count_without_marks,
+        }
 
         django_cache.set(f"{iin}_{date_range}", response, 30)
 
