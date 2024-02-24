@@ -9,6 +9,7 @@ from . import models, utils
 from .config import execute_query, platonus_connection, journal_connection
 from django.core.cache import cache as django_cache
 from django.views.decorators.csrf import csrf_exempt
+from django.http import QueryDict
 
 STUDENTS = {
     "students": "isStudent = 1",
@@ -95,8 +96,8 @@ def load_data(request):
 @csrf_exempt
 def get_marks_for_tutor(request):
     try:
-        iin = request.GET.get("iin", None)
-        date_range = request.GET.get("date_range", "7")
+        iin = request.query_params.get("iin", None)
+        date_range = request.query_params.get("date_range", "7")
         date_filter = datetime.datetime.now() - datetime.timedelta(days=int(date_range))
 
         date_filter_str = date_filter.strftime("%Y-%m-%d %H:%M:%S")
