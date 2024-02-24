@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Line Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-YtB5KDpRqrwli6bDsiLEW3kVc9qlGvxa7nRTlvJwwnuFq0cG61V1+wspW6jc7lC+" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <script>
+        function generateColor() {
+            function random(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            let r = random(0, 255);
+            let g = random(0, 255);
+            let b = random(0, 255);
+
+            if ((r > 200 && g > 200 && b > 200) || (r < 100 && g < 100 && b < 100)) {
+                return generateColor();
+            }
+
+            for (let color of generatedColors) {
+                let [oldR, oldG, oldB] = color.match(/\d+/g).map(Number);
+                if (Math.abs(r - oldR) + Math.abs(g - oldG) + Math.abs(b - oldB) < 255 * 0.55) {
+                    return generateColor();
+                }
+            }
+
+            let newColor = `rgba(${r}, ${g}, ${b}, ${random(65, 90) / 100})`;
+            generatedColors.push(newColor);
+
+            return newColor;
+        }
+
+        let generatedColors = [];
+
+        window.onload = function () {
+            fetch('http://localhost:5000/api/get_marks/')
+                .then(response => response.json())
+                .then(data => {
+                    let labels = Object.keys(data.tutor_diagram).filter(label => !data.tutor_diagram[label].marks.includes(null));
+                    let marksCount = {}; // Объект для хранения счетчика оценок
+
+                    // Проходимся по каждому преподавателю и его оценкам
+                    labels.forEach(label => {
+                        data.tutor_diagram[label].marks.forEach(mark => {
+                            // Увеличиваем счетчик для данной оценки
+                            if (marksCount[mark]) {
+                                marksCount[mark]++;
+                            } else {
+                                marksCount[mark] = 1;
+                            }
+                        });
+                    });
+
+                    // Находим оценку, которая встречается наиболее часто
+                    let mostFrequentMark = Object.keys(marksCount).reduce((a, b) => marksCount[a] > marksCount[b] ? a : b);
+
+                    // Создаем массив для оси X (оценки) и оси Y (количество оценок)
+                    let marks = Object.keys(marksCount);
+                    let counts = Object.values(marksCount);
+
+                    let ctx = document.getElementById('myChart');
+                    let myChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: marks,
+                            datasets: [{
+                                label: 'Частота оценок',
+                                data: counts,
+                                fill: false,
+                                borderColor: 'rgb(75, 192, 192)',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Оценки'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Количество оценок'
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    console.log('Самая часто встречающаяся оценка:', mostFrequentMark);
+                })
+                .catch(error => console.error('Error:', error));
+        };
+
+    </script>
+</body>
+
+</html>
