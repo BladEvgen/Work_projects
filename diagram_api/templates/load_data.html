@@ -16,7 +16,11 @@
                     </div>
                     <button type="submit" class="btn btn-primary btn-block">Отправить</button>
                 </form>
-                {% if error %}
+                {% if success %}
+                <div id="success-message" class="d-flex justify-content-center alert alert-success mt-3">
+                    {{ success }}
+                </div>
+                {% elif error %}
                 <div class="d-flex justify-content-center alert alert-danger mt-3">
                     {{ error }}
                 </div>
@@ -26,3 +30,14 @@
     </div>
 </div>
 {% endblock main %}
+
+<script>
+    window.onload = function () {
+        setTimeout(function () {
+            var element = document.getElementById('success-message');
+            if (element) {
+                element.style.display = 'none';
+            }
+        }, 10000);
+    };
+</script>

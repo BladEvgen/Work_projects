@@ -86,6 +86,8 @@ def load_data(request):
                 debtor = models.Debtors(name=key, count=value)
                 debtor.save()
 
+            context["success"] = "Файл успешно загружен!"
+
     except Exception as e:
         context["error"] = str(e)
 
