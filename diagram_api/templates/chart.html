@@ -147,7 +147,7 @@
 
     <script>
         function fetchData() {
-            fetch('http://localhost:5000/api/diagram/')
+            fetch('http://91.185.12.100:5000/api/diagram/')
                 .then(response => response.json())
                 .then(data => {
                     const diagram1Data = data.diagram_1;
@@ -324,7 +324,7 @@
         };
 
         function fetchChart(formData = null) {
-            let url = 'http://localhost:5000/api/get_marks/';
+            let url = 'http://91.185.12.100:5000/api/get_marks/';
             if (formData) {
                 url += '?' + new URLSearchParams(formData);
             }
