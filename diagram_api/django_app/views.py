@@ -1,15 +1,16 @@
 import datetime
+from contextlib import closing
+
+from django.core.cache import cache as django_cache
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from contextlib import closing
-from rest_framework import status
+
 from . import models, utils
-from .config import execute_query, platonus_connection, journal_connection
-from django.core.cache import cache as django_cache
-from django.views.decorators.csrf import csrf_exempt
-from django.http import QueryDict
+from .config import execute_query, journal_connection, platonus_connection
 
 STUDENTS = {
     "students": "isStudent = 1",
@@ -19,11 +20,6 @@ STUDENTS = {
     "small_faculty": "isStudent = 1 AND professionNameRU IN ('Сестринское дело', 'Медико-профилактическое дело', 'Общественная здравоохранение (2)')",
     "rez_mag_doc": "isStudent = 1 AND professionNameRU NOT IN ('Общая медицина', 'Медицина', 'Стоматология', 'Фармация', 'Сестринское дело', 'Медико-профилактическое дело', 'Общественная здравоохранение (2)')",
 }
-
-
-TUTORS = {"tutor": "isStudent = 0"}
-
-cache = {"last_updated": None, "data": None}
 
 
 def home(request):
@@ -36,41 +32,33 @@ def charts(request):
 
 @api_view(["GET"])
 def specialty_api(request) -> Response:
-    global cache
-    response_data = {"diagram_1": {}, "diagram_4": {}}
-
     try:
-        start_time = datetime.datetime.now()
-        if (
-            cache["last_updated"] is None
-            or (datetime.datetime.now() - cache["last_updated"]).seconds > 10
-        ):
-            print(
-                "No cache available or cache expired. Fetching data from the database..."
-            )
-            with platonus_connection() as conn:
-                for key, value in STUDENTS.items():
-                    count = execute_query(
-                        conn, f"SELECT COUNT(StudentID) FROM users WHERE {value}"
-                    )
-                    response_data["diagram_1"][key] = count
+        response_data = django_cache.get("response_data")
+
+        if response_data is None:
+            response_data = {"diagram_1": {}, "diagram_4": {}}
+
+            try:
+                with platonus_connection() as conn:
+                    for key, value in STUDENTS.items():
+                        count = execute_query(
+                            conn, f"SELECT COUNT(StudentID) FROM users WHERE {value}"
+                        )
+                        response_data["diagram_1"][key] = count
+            except Exception as e:
+                print(f"Error occurred while fetching diagram_1 data: {str(e)}")
 
             debtors = models.Debtors.objects.all()
 
             for d in debtors:
                 response_data["diagram_4"][d.name] = d.count
-            cache["data"] = response_data
-            cache["last_updated"] = datetime.datetime.now()
 
-        else:
-            response_data = cache["data"]
+            django_cache.set("response_data", response_data, 10)
 
-        end_time = datetime.datetime.now()
-        time_taken = end_time - start_time
-        print(f"Page loaded in {time_taken.total_seconds()} seconds.")
+        return Response(response_data)
+
     except Exception as e:
-        return Response({"error": str(e)}, status=500)
-    return Response(response_data)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def load_data(request):
