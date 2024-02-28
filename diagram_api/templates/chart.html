@@ -40,30 +40,33 @@
                 </div>
             </div>
         </div>
-        <div class="row">
-            <h5 class="card-title">Тенденция оценок</h5>
-            <div class="mark-container">
-                <div class="message-container d-flex align-items-center justify-content-center mx-auto mt-auto"></div>
-                <div class="col">
-                    <canvas id="markChart"></canvas>
+        <div class="container-fluid">
+            <div class="row">
+                <h5 class="card-title">Тенденция оценок</h5>
+                <div class="mark-container">
+                    <div class="message-container d-flex align-items-center justify-content-center mx-auto mt-auto">
+                    </div>
+                    <div class="col">
+                        <canvas id="markChart"></canvas>
+                    </div>
                 </div>
-            </div>
-            <div class="col">
-                <form id="chartForm">
-                    <div class="mb-3">
-                        <label for="iinInput" class="form-label">ИИН:</label>
-                        <input type="text" class="form-control" id="iinInput" name="iin">
-                    </div>
-                    <div class="mb-3">
-                        <label for="dateRangeSelect" class="form-label">Выберите диапазон дат:</label>
-                        <select class="form-select" id="dateRangeSelect" name="date_range">
-                            <option value="1">На 1 день</option>
-                            <option value="7" selected>На 7 дней</option>
-                            <option value="30">На 30 дней</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Отправить </button>
-                </form>
+                <div class="col">
+                    <form id="chartForm">
+                        <div class="mb-3">
+                            <label for="iinInput" class="form-label">ИИН:</label>
+                            <input type="text" class="form-control" id="iinInput" name="iin">
+                        </div>
+                        <div class="mb-3">
+                            <label for="dateRangeSelect" class="form-label">Выберите диапазон дат:</label>
+                            <select class="form-select" id="dateRangeSelect" name="date_range">
+                                <option value="1">На 1 день</option>
+                                <option value="7" selected>На 7 дней</option>
+                                <option value="30">На 30 дней</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Отправить </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

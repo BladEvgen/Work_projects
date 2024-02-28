@@ -15,7 +15,8 @@ body {
     font-weight: bold;
     background-color: #123075;
     color: #fff;
-    padding: 10px;
+    padding: 4px;
+    border-radius: 4px;
 }
 
 .data,
