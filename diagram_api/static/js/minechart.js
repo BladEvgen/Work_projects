@@ -97,16 +97,15 @@ function fetchData() {
       barDataElement.innerHTML += "</ul>";
 
       const barColors = [
-        "red",
-        "orange",
-        "yellow",
-        "green",
-        "blue",
-        "indigo",
-        "violet",
-        "pink",
-        "brown",
-        "grey",
+        "rgba(255, 99, 71, 1)",
+        "rgba(0, 128, 128, 1",
+        "rgba(255, 192, 203, 1)",
+        "rgba(70, 130, 180, 1)",
+        "rgba(255, 140, 0, 1",
+        "rgba(0, 128, 0, 1",
+        "rgba(128, 0, 128, 1)",
+        "rgba(139, 69, 19, 1)",
+        "rgba(0, 0, 139, 1)",
       ];
       const barChartCanvas = document
         .getElementById("barChart")
