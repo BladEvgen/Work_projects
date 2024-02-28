@@ -42,11 +42,11 @@ function fetchData() {
             {
               data: pieValues,
               backgroundColor: [
-                "rgba(54, 162, 235, 0.6)",
-                "rgba(255, 206, 86, 0.6)",
-                "rgba(75, 192, 192, 0.6)",
-                "rgba(255, 99, 132, 0.6)",
-                "rgba(255, 159, 64, 0.6)",
+                "rgba(54, 162, 235, 0.8)",
+                "rgba(255, 206, 86, 0.8)",
+                "rgba(75, 192, 192, 0.8)",
+                "rgba(255, 99, 132, 1)",
+                "rgba(255, 159, 64, 0.8)",
               ],
               borderWidth: 1,
             },
@@ -97,15 +97,15 @@ function fetchData() {
       barDataElement.innerHTML += "</ul>";
 
       const barColors = [
-        "rgba(255, 99, 71, 1)",
-        "rgba(0, 128, 128, 1",
-        "rgba(255, 192, 203, 1)",
-        "rgba(70, 130, 180, 1)",
-        "rgba(255, 140, 0, 1",
-        "rgba(0, 128, 0, 1",
-        "rgba(128, 0, 128, 1)",
-        "rgba(139, 69, 19, 1)",
-        "rgba(0, 0, 139, 1)",
+        "rgba(171, 34, 116, 1)",
+        "rgba(34, 59, 171, 1",
+        "rgba(34, 171, 64, 1)",
+        "rgba(220, 110, 18, 1)",
+        "rgba(18, 167, 222, 1",
+        "rgba(222, 21, 18, 1",
+        "rgba(245, 181, 118, 1)",
+        "rgba(255, 238, 0, 1)",
+        "rgba(87, 87, 87, 1)",
       ];
       const barChartCanvas = document
         .getElementById("barChart")
