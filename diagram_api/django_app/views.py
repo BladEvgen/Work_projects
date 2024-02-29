@@ -36,17 +36,33 @@ def specialty_api(request) -> Response:
         response_data = django_cache.get("response_data")
 
         if response_data is None:
-            response_data = {"diagram_1": {}, "diagram_4": {}}
+            response_data: dict[str, dict] = {
+                "diagram_1": {},
+                "diagram_2": {},
+                "diagram_4": {},
+            }
 
-            try:
-                with platonus_connection() as conn:
-                    for key, value in STUDENTS.items():
-                        count = execute_query(
-                            conn, f"SELECT COUNT(StudentID) FROM users WHERE {value}"
-                        )
-                        response_data["diagram_1"][key] = count
-            except Exception as e:
-                print(f"Error occurred while fetching diagram_1 data: {str(e)}")
+            language_mapping: dict[int, str] = {
+                1: "Rus",
+                2: "Kaz",
+                3: "Eng",
+                51: "Multi",
+            }
+
+            with platonus_connection() as conn:
+                for key, value in STUDENTS.items():
+                    cursor = conn.cursor()
+                    cursor.execute(f"SELECT COUNT(StudentID) FROM users WHERE {value}")
+                    count = cursor.fetchone()[0]
+                    response_data["diagram_1"][key] = count
+
+                cursor.execute(
+                    "SELECT StudyLanguageID, COUNT(*) FROM users WHERE StudyLanguageID != 0 AND isStudent = 1 GROUP BY StudyLanguageID"
+                )
+                study_language_counts = cursor.fetchall()
+                for id, count in study_language_counts:
+                    language = language_mapping.get(int(id), "Unknown")
+                    response_data["diagram_2"][language] = count
 
             debtors = models.Debtors.objects.all()
 
