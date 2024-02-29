@@ -23,11 +23,13 @@ function fetchData() {
         }
       });
       const pieValues = Object.values(diagram1Data);
+      const total = pieValues.reduce((a, b) => a + b, 0);
 
       const pieDataElement = document.getElementById("pieData");
       pieDataElement.innerHTML = "<ul>";
       pieLabels.forEach((label, index) => {
-        pieDataElement.innerHTML += `<li> ${label}: <span>${pieValues[index]} </span> </li> `;
+        const percentage = ((pieValues[index] / total) * 100).toFixed(2);
+        pieDataElement.innerHTML += `<li> ${label}: <span>${pieValues[index]} (${percentage}%)</span> </li> `;
       });
       pieDataElement.innerHTML += "</ul>";
 
