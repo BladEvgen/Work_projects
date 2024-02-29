@@ -30,6 +30,10 @@ def charts(request):
     return render(request, "chart.html", {})
 
 
+def charts_second(request):
+    return render(request, "chart_second.html", {})
+
+
 @api_view(["GET"])
 def specialty_api(request) -> Response:
     try:
