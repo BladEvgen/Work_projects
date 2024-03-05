@@ -139,7 +139,7 @@ def get_marks_for_tutor(request):
                     if marks:
                         tutor_diagram[tutor_id] = {
                             "fullName": f"{lastname}_{firstname}",
-                            "marks": [mark[0] for mark in marks],
+                            "marks": sorted([mark[0] for mark in marks], reverse=True),
                         }
                         tutor_count_with_marks += 1
                     else:
