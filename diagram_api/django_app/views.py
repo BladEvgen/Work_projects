@@ -30,6 +30,10 @@ def charts(request):
     return render(request, "chart.html", {})
 
 
+def tutor_charts(request):
+    return render(request, "tutor_charts.html", {})
+
+
 def charts_second(request):
     return render(request, "chart_second.html", {})
 
