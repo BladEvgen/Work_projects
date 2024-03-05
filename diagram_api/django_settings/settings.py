@@ -36,6 +36,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1",
     "http://localhost:5000",
     "http://91.185.12.100:5000",
+    "https://91.185.12.102",
+    "https://platonus-mark.medkrmu.kz",
 ]
 
 # ВЫКЛЮЧИТЬ МЕНЯ ПОТОМ
