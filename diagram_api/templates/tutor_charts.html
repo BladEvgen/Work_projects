@@ -1,25 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>HTTP Request</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tutors</title>
 </head>
+
 <body>
   <script>
-    fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
-      .then(response => {
-        console.log('Status Code:', response.status);
-        if (response.ok) {
-          return response.json();
-        } else {
-          console.error('Error:', response.statusText);
-        }
-      })
-      .then(data => {
-        console.log('Response:', data);
-      })
-      .catch(error => {
-        console.error('Fetch Error:', error);
-      });
+    var xhr = new XMLHttpRequest();
+
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        console.log("Статус код:", xhr.status);
+      } else {
+        console.error("Ошибка при выполнении запроса. Статус код:", xhr.status);
+      }
+    };
+
+    xhr.onerror = function () {
+      console.error("Произошла ошибка при выполнении запроса.");
+    };
+
+    xhr.open("GET", "https://platonus-mark.medkrmu.kz/dashboard/tutors");
+
+    xhr.send();
   </script>
 </body>
+
 </html>
