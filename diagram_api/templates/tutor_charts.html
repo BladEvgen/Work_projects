@@ -9,23 +9,15 @@
 
 <body>
   <script>
-    var xhr = new XMLHttpRequest();
+    fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+      })
+      .catch(error => {
+        console.error('Ошибка при получении данных:', error);
+      });
 
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        console.log("Статус код:", xhr.status);
-      } else {
-        console.error("Ошибка при выполнении запроса. Статус код:", xhr.status);
-      }
-    };
-
-    xhr.onerror = function () {
-      console.error("Произошла ошибка при выполнении запроса.");
-    };
-
-    xhr.open("GET", "https://platonus-mark.medkrmu.kz/dashboard/tutors");
-
-    xhr.send();
   </script>
 </body>
 
