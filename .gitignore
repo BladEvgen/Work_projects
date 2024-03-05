@@ -161,3 +161,6 @@ cython_debug/
 *.xlsx
 test/
 diagram_api/templates/test.html
+diagram_api/staticroot/*
+diagram_api/log/*
+diagram_api/static/*
