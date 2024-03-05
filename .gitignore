@@ -165,3 +165,6 @@ diagram_api/staticroot/*
 diagram_api/log/*
 
 
+diagram_api/templates/bar_marks.html
+diagram_api/templates/line_marks.html
+diagram_api/templates/line_marks.html
