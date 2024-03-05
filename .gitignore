@@ -164,3 +164,6 @@ diagram_api/templates/test.html
 diagram_api/staticroot/*
 diagram_api/log/*
 diagram_api/static/*
+diagram_api/static/css/*
+diagram_api/static/js/*
+
