@@ -1,5 +1,5 @@
 function fetchData() {
-  fetch("http://91.185.12.100:5000/api/diagram/")
+  fetch("https://dashboard.medkrmu.kz//api/diagram/")
     .then((response) => response.json())
     .then((data) => {
       const diagram1Data = data.diagram_1;
@@ -198,7 +198,7 @@ window.onload = function () {
 };
 
 function fetchChart(formData = null) {
-  let url = "http://91.185.12.100:5000/api/get_marks/";
+  let url = "https://dashboard.medkrmu.kz//api/get_marks/";
   if (formData) {
     url += "?" + new URLSearchParams(formData);
   }

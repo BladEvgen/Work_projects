@@ -38,6 +38,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://91.185.12.100:5000",
     "https://91.185.12.102",
     "https://platonus-mark.medkrmu.kz",
+    "https://dashboard.medkrmu.kz/",
 ]
 
 # ВЫКЛЮЧИТЬ МЕНЯ ПОТОМ
