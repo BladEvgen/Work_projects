@@ -1,5 +1,5 @@
 function fetchData() {
-  fetch("https://dashboard.medkrmu.kz//api/diagram/")
+  fetch("https://dashboard.medkrmu.kz/api/diagram/")
     .then((response) => response.json())
     .then((data) => {
       const diagram1Data = data.diagram_1;
@@ -198,7 +198,7 @@ window.onload = function () {
 };
 
 function fetchChart(formData = null) {
-  let url = "https://dashboard.medkrmu.kz//api/get_marks/";
+  let url = "https://dashboard.medkrmu.kz/api/get_marks/";
   if (formData) {
     url += "?" + new URLSearchParams(formData);
   }
