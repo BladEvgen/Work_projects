@@ -11,6 +11,33 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <title>Tutors Diagram</title>
+  <style>
+    .legend-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-right: 20px;
+      margin-bottom: 10px;
+      max-width: calc(33% - 10px);
+    }
+
+    .legend-item span {
+      flex-shrink: 0;
+    }
+
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+      border-radius: 50%;
+    }
+  </style>
 </head>
 
 <body>
@@ -77,19 +104,50 @@
   </div>
 </body>
 <script>
+  function generateColor(existingColors, uniqueness) {
+    function random(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    let h, s, l;
+    let maxAttempts = 100;
+    let attempt = 0;
+
+    do {
+      h = random(0, 360); // Генерация случайного оттенка
+      s = random(50, 100); // Насыщенность от 50% до 100%
+      l = random(20, 80); // Светлота от 20% до 80%
+      attempt++;
+    } while (
+      attempt < maxAttempts &&
+      (
+        existingColors.some(color => colorSimilarity(color, `hsl(${h}, ${s}%, ${l}%)`) < uniqueness) ||
+        (s <= 10 && l >= 90) // Игнорировать белые цвета
+      )
+    );
+
+    return `hsl(${h}, ${s}%, ${l}%)`;
+  }
+
+
   fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
     .then(response => response.json())
     .then(data => {
       console.log(data);
+
       const filteredData = data.data.filter(item => item.has_access === "1");
+
       const cafedraCounts = {};
       filteredData.forEach(item => {
         cafedraCounts[item.cafedraNameRu] = (cafedraCounts[item.cafedraNameRu] || 0) + 1;
       });
+
       const cafedraChartCanvas = document.getElementById('cafedraChart');
       const cafedraChartCtx = cafedraChartCanvas.getContext('2d');
-      const sortedCafedraNames = Object.keys(cafedraCounts).sort();
+
+      const sortedCafedraNames = Object.keys(cafedraCounts).sort().reverse();
       const sortedCafedraData = sortedCafedraNames.map(name => cafedraCounts[name]);
+
       const cafedraChart = new Chart(cafedraChartCtx, {
         type: 'bar',
         data: {
@@ -102,7 +160,6 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
           scales: {
             y: {
               beginAtZero: true
@@ -110,17 +167,18 @@
           },
           plugins: {
             legend: {
-              display: false,
+              display: true,
             }
           }
         }
       });
-      document.getElementById('cafedraChartLegend').innerHTML = generateLegendHTML(sortedCafedraNames, sortedCafedraData);
+
       const nameRuCounts = {};
       filteredData.forEach(item => {
         const name = (item.nameRu === "—" ? "Преподаватель" : item.nameRu);
         nameRuCounts[name] = (nameRuCounts[name] || 0) + 1;
       });
+
       const nameRuChartCtx = document.getElementById('nameRuChart').getContext('2d');
       const nameRuChart = new Chart(nameRuChartCtx, {
         type: 'doughnut',
@@ -129,19 +187,38 @@
           datasets: [{
             label: 'Колличество',
             data: Object.values(nameRuCounts),
-            backgroundColor: Object.keys(nameRuCounts).map(() => generateColor([], 0.6)),
+            backgroundColor: [
+              "rgba(54, 162, 235, 0.8)",
+              "rgba(255, 206, 86, 0.8)",
+              "rgba(75, 192, 192, 0.8)",
+              "rgba(255, 99, 132, 1)",
+              "rgba(255, 159, 64, 0.8)",
+            ],
           }]
         },
         options: {
           plugins: {
-            legend: {
-              display: false,
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  let label = context.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += context.raw + ' чел.';
+                  return label;
+                }
+              }
             }
+          },
+          legend: {
+            display: true,
           }
         }
       });
-      document.getElementById('nameRuChartLegend').innerHTML = generateLegendHTML(Object.keys(nameRuCounts), Object.values(nameRuCounts));
+
       const rateChartCtx = document.getElementById('rateChart').getContext('2d');
+
       const rateGroups = {};
       filteredData.forEach(item => {
         const rate = parseFloat(item.rate);
@@ -152,73 +229,69 @@
           rateGroups[rate]++;
         }
       });
+
       const sortedKeys = Object.keys(rateGroups).map(parseFloat).sort((a, b) => a - b);
+
       const sortedRateGroupsNumeric = {};
       sortedKeys.forEach(key => {
         sortedRateGroupsNumeric[key] = rateGroups[key];
       });
+
       const rateChart = new Chart(rateChartCtx, {
         type: 'pie',
         data: {
-          labels: Object.keys(sortedRateGroupsNumeric).map(rate => `Ставка ${rate}:`),
+          labels: Object.keys(sortedRateGroupsNumeric).map(rate => rate.toString()),
           datasets: [{
             label: 'Колличество',
             data: Object.values(sortedRateGroupsNumeric),
-            backgroundColor: Object.keys(sortedRateGroupsNumeric).map(() => generateColor([], 0.5)),
+            backgroundColor: [
+              "rgba(255, 99, 71, 0.8)",   // Томатный
+              "rgba(255, 165, 0, 0.8)",   // Оранжевый
+              "rgba(173, 255, 47, 0.8)",  // Зеленый желтоватый
+              "rgba(70, 130, 180, 1)",    // Стальной голубой
+              "rgba(218, 112, 214, 0.8)", // Фуксия
+              "rgba(255, 20, 147, 0.8)"   // Глубокий розовый
+            ],
           }]
         },
         options: {
           plugins: {
-            legend: {
-              display: false,
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  let label = context.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += context.raw + ' чел. (' + context.parsed + '%)';
+                  return label;
+                }
+              }
             }
+          },
+          legend: {
+            display: true,
           }
         }
       });
-      document.getElementById('rateChartLegend').innerHTML = generateLegendHTML(Object.keys(sortedRateGroupsNumeric), Object.values(sortedRateGroupsNumeric));
+
+      const nameRuChartLegend = document.getElementById('nameRuChartLegend');
+      Object.keys(nameRuCounts).forEach((name, index) => {
+        const color = nameRuChart.data.datasets[0].backgroundColor[index];
+        nameRuChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>${name}: <strong>${nameRuCounts[name]} чел. (${((nameRuCounts[name] / filteredData.length) * 100).toFixed(2)}%)</strong></div>`;
+      });
+
+      const rateChartLegend = document.getElementById('rateChartLegend');
+      Object.keys(sortedRateGroupsNumeric).forEach((rate, index) => {
+        const color = rateChart.data.datasets[0].backgroundColor[index];
+        rateChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>Ставка ${rate}:<strong> ${sortedRateGroupsNumeric[rate]} чел. (${((sortedRateGroupsNumeric[rate] / filteredData.length) * 100).toFixed(2)}%)</div></strong>`;
+
+      });
+
     })
     .catch(error => {
       console.error('Ошибка:', error);
     });
-
-  function generateLegendHTML(labels, values) {
-    let html = '<ul class="data">';
-    for (let i = 0; i < labels.length; i++) {
-      html += `<li>Ставка ${labels[i]}: <span>${values[i]} чел.</span></li>`;
-    }
-    html += '</ul>';
-    return html;
-  }
-
-  function generateColor(existingColors, similarity) {
-    function random(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    let r, g, b;
-    let maxAttempts = 100;
-    let attempt = 0;
-
-    do {
-      r = random(0, 255);
-      g = random(0, 255);
-      b = random(0, 255);
-      attempt++;
-    } while (attempt < maxAttempts && existingColors.some(color => colorSimilarity(color, `rgba(${r}, ${g}, ${b}, 1)`) >= similarity));
-
-    return `rgba(${r}, ${g}, ${b}, 1)`;
-  }
-
-  function colorSimilarity(color1, color2) {
-    let [r1, g1, b1] = color1.match(/\d+/g).map(Number);
-    let [r2, g2, b2] = color2.match(/\d+/g).map(Number);
-
-    let deltaR = Math.abs(r1 - r2);
-    let deltaG = Math.abs(g1 - g2);
-    let deltaB = Math.abs(b1 - b2);
-
-    return 1 - ((deltaR + deltaG + deltaB) / (255 * 3));
-  }
 </script>
 
 </html>
