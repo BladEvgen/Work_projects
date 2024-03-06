@@ -1,5 +1,4 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="ru">
 
@@ -17,43 +16,180 @@
 <body>
   <div class="container-fluid">
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-3">
         <div class="card">
           <div class="card-body p-0">
             <h5 class="card-title">Ученое звание</h5>
-            <div class="chart-container w-50">
+            <div class="chart-container">
               <canvas id="nameRuChart"></canvas>
             </div>
+            <div class="legend-container" id="nameRuChartLegend"></div>
           </div>
         </div>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-3">
         <div class="card">
           <div class="card-body p-0">
             <h5 class="card-title">Ставки</h5>
-            <div class="chart-container w-50">
+            <div class="chart-container">
               <canvas id="rateChart"></canvas>
             </div>
+            <div class="legend-container" id="rateChartLegend"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body p-0">
+            <h5 class="card-title">Другая диаграмма</h5>
+            <div class="chart-container">
+              <canvas id="otherChart"></canvas>
+            </div>
+            <div class="legend-container" id="otherChartLegend"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body p-0">
+            <h5 class="card-title">Еще одна диаграмма</h5>
+            <div class="chart-container">
+              <canvas id="anotherChart"></canvas>
+            </div>
+            <div class="legend-container" id="anotherChartLegend"></div>
           </div>
         </div>
       </div>
     </div>
     <div class="row mt-4">
-      <div class="col">
+      <div class="col-12 col-sm-6 col-md-6 col-lg-6 vw-100">
         <div class="card">
-          <div class="card-body m-0 p-0">
+          <div class="card-body m-0 p-0 ">
             <h5 class="card-title">Тенденция кафедр</h5>
-            <div class="chart-container w-100">
+            <div class="chart-container vh-100">
               <canvas id="cafedraChart"></canvas>
             </div>
+            <div class="legend-container" id="cafedraChartLegend"></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </body>
-
 <script>
+  fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      const filteredData = data.data.filter(item => item.has_access === "1");
+      const cafedraCounts = {};
+      filteredData.forEach(item => {
+        cafedraCounts[item.cafedraNameRu] = (cafedraCounts[item.cafedraNameRu] || 0) + 1;
+      });
+      const cafedraChartCanvas = document.getElementById('cafedraChart');
+      const cafedraChartCtx = cafedraChartCanvas.getContext('2d');
+      const sortedCafedraNames = Object.keys(cafedraCounts).sort();
+      const sortedCafedraData = sortedCafedraNames.map(name => cafedraCounts[name]);
+      const cafedraChart = new Chart(cafedraChartCtx, {
+        type: 'bar',
+        data: {
+          labels: sortedCafedraNames,
+          datasets: [{
+            label: 'Кафедры',
+            data: sortedCafedraData,
+            backgroundColor: sortedCafedraNames.map(() => generateColor([], 0.3)),
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: false,
+            }
+          }
+        }
+      });
+      document.getElementById('cafedraChartLegend').innerHTML = generateLegendHTML(sortedCafedraNames, sortedCafedraData);
+      const nameRuCounts = {};
+      filteredData.forEach(item => {
+        const name = (item.nameRu === "—" ? "Преподаватель" : item.nameRu);
+        nameRuCounts[name] = (nameRuCounts[name] || 0) + 1;
+      });
+      const nameRuChartCtx = document.getElementById('nameRuChart').getContext('2d');
+      const nameRuChart = new Chart(nameRuChartCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(nameRuCounts),
+          datasets: [{
+            label: 'Колличество',
+            data: Object.values(nameRuCounts),
+            backgroundColor: Object.keys(nameRuCounts).map(() => generateColor([], 0.6)),
+          }]
+        },
+        options: {
+          plugins: {
+            legend: {
+              display: false,
+            }
+          }
+        }
+      });
+      document.getElementById('nameRuChartLegend').innerHTML = generateLegendHTML(Object.keys(nameRuCounts), Object.values(nameRuCounts));
+      const rateChartCtx = document.getElementById('rateChart').getContext('2d');
+      const rateGroups = {};
+      filteredData.forEach(item => {
+        const rate = parseFloat(item.rate);
+        if (rate > 0) {
+          if (!rateGroups[rate]) {
+            rateGroups[rate] = 0;
+          }
+          rateGroups[rate]++;
+        }
+      });
+      const sortedKeys = Object.keys(rateGroups).map(parseFloat).sort((a, b) => a - b);
+      const sortedRateGroupsNumeric = {};
+      sortedKeys.forEach(key => {
+        sortedRateGroupsNumeric[key] = rateGroups[key];
+      });
+      const rateChart = new Chart(rateChartCtx, {
+        type: 'pie',
+        data: {
+          labels: Object.keys(sortedRateGroupsNumeric).map(rate => `Ставка ${rate}:`),
+          datasets: [{
+            label: 'Колличество',
+            data: Object.values(sortedRateGroupsNumeric),
+            backgroundColor: Object.keys(sortedRateGroupsNumeric).map(() => generateColor([], 0.5)),
+          }]
+        },
+        options: {
+          plugins: {
+            legend: {
+              display: false,
+            }
+          }
+        }
+      });
+      document.getElementById('rateChartLegend').innerHTML = generateLegendHTML(Object.keys(sortedRateGroupsNumeric), Object.values(sortedRateGroupsNumeric));
+    })
+    .catch(error => {
+      console.error('Ошибка:', error);
+    });
+
+  function generateLegendHTML(labels, values) {
+    let html = '<ul class="data">';
+    for (let i = 0; i < labels.length; i++) {
+      html += `<li>Ставка ${labels[i]}: <span>${values[i]} чел.</span></li>`;
+    }
+    html += '</ul>';
+    return html;
+  }
+
   function generateColor(existingColors, similarity) {
     function random(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -83,143 +219,6 @@
 
     return 1 - ((deltaR + deltaG + deltaB) / (255 * 3));
   }
-
-  fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
-    .then(response => response.json())
-    .then(data => {
-      console.log(data);
-
-      const filteredData = data.data.filter(item => item.has_access === "1");
-
-      const cafedraCounts = {};
-      filteredData.forEach(item => {
-        cafedraCounts[item.cafedraNameRu] = (cafedraCounts[item.cafedraNameRu] || 0) + 1;
-      });
-
-      const cafedraChartCanvas = document.getElementById('cafedraChart');
-      const cafedraChartCtx = cafedraChartCanvas.getContext('2d');
-
-      const sortedCafedraNames = Object.keys(cafedraCounts).sort();
-      const sortedCafedraData = sortedCafedraNames.map(name => cafedraCounts[name]);
-
-      const cafedraChart = new Chart(cafedraChartCtx, {
-        type: 'bar',
-        data: {
-          labels: sortedCafedraNames,
-          datasets: [{
-            label: 'Кафедры',
-            data: sortedCafedraData,
-            backgroundColor: sortedCafedraNames.map(() => generateColor([], 0.3)),
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          },
-          plugins: {
-            legend: {
-              display: true,
-            }
-          }
-        }
-      });
-
-      const nameRuCounts = {};
-      filteredData.forEach(item => {
-        const name = (item.nameRu === "—" ? "Преподаватель" : item.nameRu);
-        nameRuCounts[name] = (nameRuCounts[name] || 0) + 1;
-      });
-
-      const nameRuChartCtx = document.getElementById('nameRuChart').getContext('2d');
-      const nameRuChart = new Chart(nameRuChartCtx, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(nameRuCounts),
-          datasets: [{
-            label: 'Колличество',
-            data: Object.values(nameRuCounts),
-            backgroundColor: Object.keys(nameRuCounts).map(() => generateColor([], 0.6)),
-          }]
-        },
-        options: {
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: function (context) {
-                  let label = context.label || '';
-                  if (label) {
-                    label += ': ';
-                  }
-                  label += context.raw + ' чел.';
-                  return label;
-                }
-              }
-            }
-          },
-          legend: {
-            display: true,
-          }
-        }
-      });
-
-      const rateChartCtx = document.getElementById('rateChart').getContext('2d');
-
-      const rateGroups = {};
-      filteredData.forEach(item => {
-        const rate = parseFloat(item.rate);
-        if (rate > 0) {
-          if (!rateGroups[rate]) {
-            rateGroups[rate] = 0;
-          }
-          rateGroups[rate]++;
-        }
-      });
-
-      const sortedKeys = Object.keys(rateGroups).map(parseFloat).sort((a, b) => a - b);
-
-      const sortedRateGroupsNumeric = {};
-      sortedKeys.forEach(key => {
-        sortedRateGroupsNumeric[key] = rateGroups[key];
-      });
-
-      const rateChart = new Chart(rateChartCtx, {
-        type: 'pie',
-        data: {
-          labels: Object.keys(sortedRateGroupsNumeric).map(rate => rate.toString()),
-          datasets: [{
-            label: 'Колличество',
-            data: Object.values(sortedRateGroupsNumeric),
-            backgroundColor: Object.keys(sortedRateGroupsNumeric).map(() => generateColor([], 0.5)),
-          }]
-        },
-        options: {
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: function (context) {
-                  let label = context.label || '';
-                  if (label) {
-                    label += ': ';
-                  }
-                  label += context.raw + ' чел. (' + context.parsed + '%)';
-                  return label;
-                }
-              }
-            }
-          },
-          legend: {
-            display: true,
-          }
-        }
-      });
-    })
-    .catch(error => {
-      console.error('Ошибка:', error);
-    });
-
 </script>
 
 </html>
