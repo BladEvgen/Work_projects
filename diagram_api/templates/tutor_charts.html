@@ -12,24 +12,54 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <title>Tutors Diagram</title>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .chart-container {
+      margin-top: 20px;
+    }
+
+    .card-title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      background-color: #123075;
+      color: #fff;
+      padding: 10px;
+      border-radius: 4px;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
 </head>
 
 <body>
   <div class="container-fluid">
     <div class="row">
-      <div class="col-md-6 col-12">
-        <div class="card mb-3">
-          <div class="card-body">
-            <h5 class="card-title text-center">Диаграмма преподавателей по кафедрам</h5>
-            <canvas id="barChart"></canvas>
+      <div class="col-md-6">
+        <div class="chart-container">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Диаграмма преподавателей по кафедрам</h5>
+              <canvas id="barChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
-      <div class="col-md-6 col-12">
-        <div class="card mb-3">
-          <div class="card-body">
-            <h5 class="card-title text-center">Диаграмма типов преподавателей</h5>
-            <canvas id="doughnutChart"></canvas>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="chart-container">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Диаграмма типов преподавателей</h5>
+              <canvas id="doughnutChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
