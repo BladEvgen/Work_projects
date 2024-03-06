@@ -17,11 +17,11 @@
 <body>
   <div class="container-fluid">
     <div class="row">
-      <div class="col-md-4">
+      <div class="col-md-8">
         <canvas id="donutChart"></canvas>
         <canvas id="pieChart"></canvas>
       </div>
-      <div class="col-md-8">
+      <div class="col-md-4">
         <canvas id="barChart"></canvas>
       </div>
     </div>
@@ -42,9 +42,12 @@
 
       filteredData.forEach(item => {
         cafedraCounts[item.cafedraNameRu] = (cafedraCounts[item.cafedraNameRu] || 0) + 1;
-        nameRuCounts[item.nameRu || "Преподаватель"] = (nameRuCounts[item.nameRu || "Преподаватель"] || 0) + 1;
+        const nameRu = item.nameRu === "—" ? "Преподаватель" : item.nameRu;
+        nameRuCounts[nameRu] = (nameRuCounts[nameRu] || 0) + 1;
         const rate = parseFloat(item.rate);
-        rateCounts[rate] = (rateCounts[rate] || 0) + 1;
+        if (rate !== 0) {
+          rateCounts[rate] = (rateCounts[rate] || 0) + 1;
+        }
       });
 
       const barCtx = document.getElementById('barChart').getContext('2d');
@@ -71,7 +74,7 @@
       new Chart(donutCtx, {
         type: 'doughnut',
         data: {
-          labels: Object.keys(nameRuCounts),
+          labels: Object.keys(nameRuCounts).sort((a, b) => nameRuCounts[a] - nameRuCounts[b]),
           datasets: [{
             label: 'Типы преподавателей',
             data: Object.values(nameRuCounts),
