@@ -17,12 +17,12 @@
 <body>
   <div class="container-fluid">
     <div class="row">
-      <div class="col-md-8">
-        <canvas id="barChart"></canvas>
-      </div>
       <div class="col-md-4">
         <canvas id="donutChart"></canvas>
         <canvas id="pieChart"></canvas>
+      </div>
+      <div class="col-md-8">
+        <canvas id="barChart"></canvas>
       </div>
     </div>
   </div>
@@ -38,12 +38,13 @@
 
       const cafedraCounts = {};
       const nameRuCounts = { "Преподаватель": 0 };
-      const rates = [];
+      const rateCounts = {};
 
       filteredData.forEach(item => {
         cafedraCounts[item.cafedraNameRu] = (cafedraCounts[item.cafedraNameRu] || 0) + 1;
         nameRuCounts[item.nameRu || "Преподаватель"] = (nameRuCounts[item.nameRu || "Преподаватель"] || 0) + 1;
-        rates.push(parseFloat(item.rate));
+        const rate = parseFloat(item.rate);
+        rateCounts[rate] = (rateCounts[rate] || 0) + 1;
       });
 
       const barCtx = document.getElementById('barChart').getContext('2d');
@@ -83,11 +84,11 @@
       new Chart(pieCtx, {
         type: 'pie',
         data: {
-          labels: ["Ставка", "Другие"],
+          labels: Object.keys(rateCounts).map(rate => `${rate.toFixed(2)}`),
           datasets: [{
             label: 'Ставки преподавателей',
-            data: [rates.reduce((acc, curr) => acc + curr, 0), rates.length - rates.reduce((acc, curr) => acc + curr, 0)],
-            backgroundColor: ["#36a2eb", "#ff6384"]
+            data: Object.values(rateCounts),
+            backgroundColor: Object.keys(rateCounts).map(generateColor)
           }]
         }
       });
