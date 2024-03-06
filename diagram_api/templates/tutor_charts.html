@@ -31,13 +31,15 @@
 </body>
 
 <script>
+  let generatedColors = [];
+
   fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
     .then(response => response.json())
     .then(data => {
       const filteredData = data.data.filter(item => item.has_access === "1");
 
       const cafedraCounts = {};
-      const nameRuCounts = { "Преподаватель": 0 }; // Значение по умолчанию для "Преподаватель"
+      const nameRuCounts = { "Преподаватель": 0 };
       const rates = [];
 
       filteredData.forEach(item => {
@@ -119,7 +121,6 @@
         return generateColor();
       }
     }
-    let generateColor = [];
 
     let newColor = `rgba(${r}, ${g}, ${b}, ${random(60, 90) / 100})`;
     generatedColors.push(newColor);
