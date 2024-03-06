@@ -18,16 +18,84 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-md-4">
+        <canvas id="barChart"></canvas>
+      </div>
+      <div class="col-md-4">
         <canvas id="donutChart"></canvas>
       </div>
-      <div class="col-md-8">
-        <canvas id="barChart"></canvas>
+      <div class="col-md-4">
+        <canvas id="pieChart"></canvas>
       </div>
     </div>
   </div>
 </body>
+
 <script>
-  let generatedColors = [];
+  fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
+    .then(response => response.json())
+    .then(data => {
+      const filteredData = data.data.filter(item => item.has_access === "1");
+
+      const cafedraCounts = {};
+      const nameRuCounts = { "Преподаватель": 0 }; // Значение по умолчанию для "Преподаватель"
+      const rates = [];
+
+      filteredData.forEach(item => {
+        cafedraCounts[item.cafedraNameRu] = (cafedraCounts[item.cafedraNameRu] || 0) + 1;
+        nameRuCounts[item.nameRu || "Преподаватель"] = (nameRuCounts[item.nameRu || "Преподаватель"] || 0) + 1;
+        rates.push(parseFloat(item.rate));
+      });
+
+      const barCtx = document.getElementById('barChart').getContext('2d');
+      new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(cafedraCounts),
+          datasets: [{
+            label: 'Количество преподавателей',
+            data: Object.values(cafedraCounts),
+            backgroundColor: Object.keys(cafedraCounts).map(generateColor)
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+      const donutCtx = document.getElementById('donutChart').getContext('2d');
+      new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(nameRuCounts),
+          datasets: [{
+            label: 'Типы преподавателей',
+            data: Object.values(nameRuCounts),
+            backgroundColor: Object.keys(nameRuCounts).map(generateColor)
+          }]
+        }
+      });
+
+      const pieCtx = document.getElementById('pieChart').getContext('2d');
+      new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+          labels: ["Ставка", "Другие"],
+          datasets: [{
+            label: 'Ставки преподавателей',
+            data: [rates.reduce((acc, curr) => acc + curr, 0), rates.length - rates.reduce((acc, curr) => acc + curr, 0)],
+            backgroundColor: ["#36a2eb", "#ff6384"]
+          }]
+        }
+      });
+
+    })
+    .catch(error => {
+      console.error('Ошибка:', error);
+    });
 
   function generateColor() {
     function random(min, max) {
@@ -57,57 +125,6 @@
 
     return newColor;
   }
-
-  fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
-    .then(response => response.json())
-    .then(data => {
-      let cafedraCounts = {};
-      let nameRuCounts = {};
-
-      data.data.forEach(tutor => {
-        if (tutor.has_access === "1") {
-          cafedraCounts[tutor.cafedraNameRu] = (cafedraCounts[tutor.cafedraNameRu] || 0) + 1;
-          nameRuCounts[tutor.nameRu === "—" ? "Преподаватель" : tutor.nameRu] = (nameRuCounts[tutor.nameRu === "—" ? "Преподаватель" : tutor.nameRu] || 0) + 1;
-        }
-      });
-
-      let donutChartCanvas = document.getElementById('donutChart').getContext('2d');
-      let donutChart = new Chart(donutChartCanvas, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(nameRuCounts),
-          datasets: [{
-            data: Object.values(nameRuCounts),
-            backgroundColor: Object.keys(nameRuCounts).map(() => generateColor())
-          }]
-        }
-      });
-
-      let barChartCanvas = document.getElementById('barChart').getContext('2d');
-      let barChart = new Chart(barChartCanvas, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(cafedraCounts),
-          datasets: [{
-            label: 'Количество',
-            data: Object.values(cafedraCounts),
-            backgroundColor: Object.keys(cafedraCounts).map(() => generateColor())
-          }]
-        },
-        options: {
-          scales: {
-            yAxes: [{
-              ticks: {
-                beginAtZero: true
-              }
-            }]
-          }
-        }
-      });
-    })
-    .catch(error => {
-      console.error('Ошибка:', error);
-    });
 </script>
 
 </html>
