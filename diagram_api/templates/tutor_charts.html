@@ -13,27 +13,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <title>Tutors Diagram</title>
   <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-    }
-
     .chart-container {
-      margin-top: 20px;
-    }
-
-    .card-title {
-      text-align: center;
-      font-size: 20px;
-      font-weight: bold;
-      background-color: #123075;
-      color: #fff;
-      padding: 10px;
-      border-radius: 4px;
-    }
-
-    canvas {
-      max-width: 100%;
-      height: auto;
+      width: 100%;
+      height: 400px;
     }
   </style>
 </head>
@@ -41,117 +23,114 @@
 <body>
   <div class="container-fluid">
     <div class="row">
-      <div class="col-md-6">
-        <div class="chart-container">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Диаграмма преподавателей по кафедрам</h5>
-              <canvas id="barChart"></canvas>
-            </div>
-          </div>
-        </div>
+      <div class="col-md-4">
+        <canvas id="cafedraChart" class="chart-container"></canvas>
       </div>
-    </div>
-    <div class="row">
-      <div class="col-md-6">
-        <div class="chart-container">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Диаграмма типов преподавателей</h5>
-              <canvas id="doughnutChart"></canvas>
-            </div>
-          </div>
-        </div>
+      <div class="col-md-4">
+        <canvas id="nameRuChart" class="chart-container"></canvas>
+      </div>
+      <div class="col-md-4">
+        <canvas id="lineChart" class="chart-container"></canvas>
       </div>
     </div>
   </div>
+
+  <script>
+    // Функция для генерации случайного цвета
+    function generateColor() {
+      function random(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      let r = random(0, 255);
+      let g = random(0, 255);
+      let b = random(0, 255);
+
+      return `rgba(${r}, ${g}, ${b}, 0.7)`;
+    }
+
+    // Получение данных и построение графиков
+    fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
+      .then(response => response.json())
+      .then(data => {
+        // Обработка данных для первой диаграммы (столбчатая)
+        let cafedraData = {};
+        data.data.forEach(item => {
+          if (item.has_access === "1") {
+            cafedraData[item.cafedraNameRu] = (cafedraData[item.cafedraNameRu] || 0) + 1;
+          }
+        });
+        let cafedraLabels = Object.keys(cafedraData);
+        let cafedraCounts = Object.values(cafedraData);
+        let cafedraColors = cafedraLabels.map(generateColor);
+
+        // Построение первой диаграммы
+        let cafedraCtx = document.getElementById('cafedraChart').getContext('2d');
+        let cafedraChart = new Chart(cafedraCtx, {
+          type: 'bar',
+          data: {
+            labels: cafedraLabels,
+            datasets: [{
+              label: 'Количество преподавателей',
+              data: cafedraCounts,
+              backgroundColor: cafedraColors
+            }]
+          },
+          options: {
+            legend: {
+              display: false
+            }
+          }
+        });
+
+        // Обработка данных для второй диаграммы (типа пончик)
+        let nameRuData = {};
+        data.data.forEach(item => {
+          if (item.has_access === "1") {
+            let name = item.nameRu === "—" ? "Преподаватель" : item.nameRu;
+            nameRuData[name] = (nameRuData[name] || 0) + 1;
+          }
+        });
+        let nameRuLabels = Object.keys(nameRuData);
+        let nameRuCounts = Object.values(nameRuData);
+
+        // Построение второй диаграммы
+        let nameRuCtx = document.getElementById('nameRuChart').getContext('2d');
+        let nameRuChart = new Chart(nameRuCtx, {
+          type: 'doughnut',
+          data: {
+            labels: nameRuLabels,
+            datasets: [{
+              data: nameRuCounts,
+              backgroundColor: nameRuLabels.map(generateColor)
+            }]
+          }
+        });
+
+        // Данные для третьей диаграммы (линейная)
+        let years = ['2019', '2020', '2021', '2022']; // Пример данных для года
+        let lineData = {
+          labels: years,
+          datasets: [{
+            label: 'Пример',
+            data: [10, 20, 30, 40], // Пример данных для количества
+            fill: false,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            tension: 0.1
+          }]
+        };
+
+        // Построение третьей диаграммы (линейной)
+        let lineCtx = document.getElementById('lineChart').getContext('2d');
+        let lineChart = new Chart(lineCtx, {
+          type: 'line',
+          data: lineData
+        });
+      })
+      .catch(error => {
+        console.error('Ошибка:', error);
+      });
+  </script>
 </body>
-
-<script>
-  fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
-    .then(response => response.json())
-    .then(data => {
-      const filteredData = data.data.filter(item => item.has_access === "1");
-
-      const cafedraCounts = {};
-      const nameRuCounts = {};
-
-      filteredData.forEach(item => {
-        cafedraCounts[item.cafedraNameRu] = (cafedraCounts[item.cafedraNameRu] || 0) + 1;
-        const nameRu = item.nameRu.trim() || "Преподаватель"; // Заменяем пустые или "--" значения на "Преподаватель"
-        nameRuCounts[nameRu] = (nameRuCounts[nameRu] || 0) + 1;
-      });
-
-      const cafedraLabels = Object.keys(cafedraCounts);
-      const cafedraData = Object.values(cafedraCounts);
-      const nameRuLabels = Object.keys(nameRuCounts);
-      const nameRuData = Object.values(nameRuCounts);
-
-      const barChartCtx = document.getElementById('barChart').getContext('2d');
-      const doughnutChartCtx = document.getElementById('doughnutChart').getContext('2d');
-
-      const barChart = new Chart(barChartCtx, {
-        type: 'bar',
-        data: {
-          labels: cafedraLabels,
-          datasets: [{
-            label: 'Количество преподавателей',
-            data: cafedraData,
-            backgroundColor: generateColors(cafedraLabels.length),
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false
-        }
-      });
-
-      const doughnutChart = new Chart(doughnutChartCtx, {
-        type: 'doughnut',
-        data: {
-          labels: nameRuLabels,
-          datasets: [{
-            label: 'Тип преподавателя',
-            data: nameRuData,
-            backgroundColor: generateColors(nameRuLabels.length),
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false
-        }
-      });
-
-    })
-    .catch(error => {
-      console.error('Ошибка:', error);
-    });
-
-  function generateColors(count) {
-    const colors = [];
-    for (let i = 0; i < count; i++) {
-      colors.push(generateColor());
-    }
-    return colors;
-  }
-
-  function generateColor() {
-    function random(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    let r = random(0, 255);
-    let g = random(0, 255);
-    let b = random(0, 255);
-
-    if ((r > 200 && g > 200 && b > 200) || (r < 100 && g < 100 && b < 100)) {
-      return generateColor();
-    }
-
-    return `rgba(${r}, ${g}, ${b}, ${(random(50, 90) / 100)})`;
-  }
-</script>
 
 </html>
