@@ -31,7 +31,6 @@
 </body>
 
 <script>
-  let generateColor = [];
   fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
     .then(response => response.json())
     .then(data => {
@@ -120,6 +119,7 @@
         return generateColor();
       }
     }
+    let generateColor = [];
 
     let newColor = `rgba(${r}, ${g}, ${b}, ${random(60, 90) / 100})`;
     generatedColors.push(newColor);
