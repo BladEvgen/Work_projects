@@ -12,125 +12,100 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <title>Tutors Diagram</title>
-  <style>
-    .chart-container {
-      width: 100%;
-      height: 400px;
-    }
-  </style>
 </head>
 
 <body>
   <div class="container-fluid">
     <div class="row">
       <div class="col-md-4">
-        <canvas id="cafedraChart" class="chart-container"></canvas>
+        <canvas id="donutChart"></canvas>
       </div>
-      <div class="col-md-4">
-        <canvas id="nameRuChart" class="chart-container"></canvas>
-      </div>
-      <div class="col-md-4">
-        <canvas id="lineChart" class="chart-container"></canvas>
+      <div class="col-md-8">
+        <canvas id="barChart"></canvas>
       </div>
     </div>
   </div>
-
-  <script>
-    // Функция для генерации случайного цвета
-    function generateColor() {
-      function random(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-      }
-
-      let r = random(0, 255);
-      let g = random(0, 255);
-      let b = random(0, 255);
-
-      return `rgba(${r}, ${g}, ${b}, 0.7)`;
+</body>
+<script>
+  function generateColor() {
+    function random(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    // Получение данных и построение графиков
-    fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
-      .then(response => response.json())
-      .then(data => {
-        // Обработка данных для первой диаграммы (столбчатая)
-        let cafedraData = {};
-        data.data.forEach(item => {
-          if (item.has_access === "1") {
-            cafedraData[item.cafedraNameRu] = (cafedraData[item.cafedraNameRu] || 0) + 1;
-          }
-        });
-        let cafedraLabels = Object.keys(cafedraData);
-        let cafedraCounts = Object.values(cafedraData);
-        let cafedraColors = cafedraLabels.map(generateColor);
+    let r = random(0, 255);
+    let g = random(0, 255);
+    let b = random(0, 255);
 
-        // Построение первой диаграммы
-        let cafedraCtx = document.getElementById('cafedraChart').getContext('2d');
-        let cafedraChart = new Chart(cafedraCtx, {
-          type: 'bar',
-          data: {
-            labels: cafedraLabels,
-            datasets: [{
-              label: 'Количество преподавателей',
-              data: cafedraCounts,
-              backgroundColor: cafedraColors
-            }]
-          },
-          options: {
-            legend: {
-              display: false
-            }
-          }
-        });
+    if ((r > 200 && g > 200 && b > 200) || (r < 100 && g < 100 && b < 100)) {
+      return generateColor();
+    }
 
-        // Обработка данных для второй диаграммы (типа пончик)
-        let nameRuData = {};
-        data.data.forEach(item => {
-          if (item.has_access === "1") {
-            let name = item.nameRu === "—" ? "Преподаватель" : item.nameRu;
-            nameRuData[name] = (nameRuData[name] || 0) + 1;
-          }
-        });
-        let nameRuLabels = Object.keys(nameRuData);
-        let nameRuCounts = Object.values(nameRuData);
+    for (let color of generatedColors) {
+      let [oldR, oldG, oldB] = color.match(/\d+/g).map(Number);
+      if (
+        Math.abs(r - oldR) + Math.abs(g - oldG) + Math.abs(b - oldB) <
+        255 * 0.05
+      ) {
+        return generateColor();
+      }
+    }
 
-        // Построение второй диаграммы
-        let nameRuCtx = document.getElementById('nameRuChart').getContext('2d');
-        let nameRuChart = new Chart(nameRuCtx, {
-          type: 'doughnut',
-          data: {
-            labels: nameRuLabels,
-            datasets: [{
-              data: nameRuCounts,
-              backgroundColor: nameRuLabels.map(generateColor)
-            }]
-          }
-        });
+    let newColor = `rgba(${r}, ${g}, ${b}, ${random(35, 60) / 100})`;
+    generatedColors.push(newColor);
 
-        // Данные для третьей диаграммы (линейная)
-        let years = ['2019', '2020', '2021', '2022']; // Пример данных для года
-        let lineData = {
-          labels: years,
-          datasets: [{
-            label: 'Пример',
-            data: [10, 20, 30, 40], // Пример данных для количества
-            fill: false,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            tension: 0.1
-          }]
-        };
+    return newColor;
+  }
 
-        // Построение третьей диаграммы (линейной)
-        let lineCtx = document.getElementById('lineChart').getContext('2d');
-        let lineChart = new Chart(lineCtx, {
-          type: 'line',
-          data: lineData
-        });
-      })
-      .catch(error => {
-        console.error('Ошибка:', error);
+  fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
+    .then(response => response.json())
+    .then(data => {
+      let cafedraCounts = {};
+      let nameRuCounts = {};
+
+      data.data.forEach(tutor => {
+        if (tutor.has_access === "1") {
+          cafedraCounts[tutor.cafedraNameRu] = (cafedraCounts[tutor.cafedraNameRu] || 0) + 1;
+          nameRuCounts[tutor.nameRu === "—" ? "Преподаватель" : tutor.nameRu] = (nameRuCounts[tutor.nameRu === "—" ? "Преподаватель" : tutor.nameRu] || 0) + 1;
+        }
       });
-  </script>
-</body>
+
+      let donutChartCanvas = document.getElementById('donutChart').getContext('2d');
+      let donutChart = new Chart(donutChartCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(nameRuCounts),
+          datasets: [{
+            data: Object.values(nameRuCounts),
+            backgroundColor: Object.keys(nameRuCounts).map(() => generateColor())
+          }]
+        }
+      });
+
+      let barChartCanvas = document.getElementById('barChart').getContext('2d');
+      let barChart = new Chart(barChartCanvas, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(cafedraCounts),
+          datasets: [{
+            label: 'Количество',
+            data: Object.values(cafedraCounts),
+            backgroundColor: Object.keys(cafedraCounts).map(() => generateColor())
+          }]
+        },
+        options: {
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero: true
+              }
+            }]
+          }
+        }
+      });
+    })
+    .catch(error => {
+      console.error('Ошибка:', error);
+    });
+</script>
 
 </html>
