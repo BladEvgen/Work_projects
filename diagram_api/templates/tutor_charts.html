@@ -84,7 +84,7 @@
       new Chart(pieCtx, {
         type: 'pie',
         data: {
-          labels: Object.keys(rateCounts).map(rate => `${rate.toFixed(2)}`),
+          labels: Object.keys(rateCounts).map(rate => parseFloat(rate).toFixed(2)),
           datasets: [{
             label: 'Ставки преподавателей',
             data: Object.values(rateCounts),
