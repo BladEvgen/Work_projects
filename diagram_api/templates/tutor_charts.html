@@ -16,11 +16,10 @@
 
 <body>
   <div class="container-fluid">
-    <div class="">
-      <canvas id="barChart"></canvas>
-    </div>
     <div class="row">
-
+      <div class="col-md-6">
+        <canvas id="barChart"></canvas>
+      </div>
       <div class="col-md-6">
         <canvas id="doughnutChart"></canvas>
       </div>
@@ -39,7 +38,8 @@
 
       filteredData.forEach(item => {
         cafedraCounts[item.cafedraNameRu] = (cafedraCounts[item.cafedraNameRu] || 0) + 1;
-        nameRuCounts[item.nameRu || "Преподаватель"] = (nameRuCounts[item.nameRu || "Преподаватель"] || 0) + 1;
+        const nameRu = item.nameRu.trim() || "Преподаватель"; // Заменяем пустые или "--" значения на "Преподаватель"
+        nameRuCounts[nameRu] = (nameRuCounts[nameRu] || 0) + 1;
       });
 
       const cafedraLabels = Object.keys(cafedraCounts);
