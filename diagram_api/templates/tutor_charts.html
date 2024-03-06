@@ -17,118 +17,209 @@
 <body>
   <div class="container-fluid">
     <div class="row">
-      <div class="col-md-8">
-        <canvas id="donutChart"></canvas>
-        <canvas id="pieChart"></canvas>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body p-0">
+            <h5 class="card-title">Ученое звание</h5>
+            <div class="chart-container w-50">
+              <canvas id="nameRuChart"></canvas>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="col-md-4">
-        <canvas id="barChart"></canvas>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body p-0">
+            <h5 class="card-title">Ставки</h5>
+            <div class="chart-container w-50">
+              <canvas id="rateChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-4">
+      <div class="col">
+        <div class="card">
+          <div class="card-body m-0 p-0">
+            <h5 class="card-title">Тенденция кафедр</h5>
+            <div class="chart-container w-100">
+              <canvas id="cafedraChart"></canvas>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </body>
 
 <script>
-  let generatedColors = [];
+  function generateColor(existingColors, similarity) {
+    function random(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    let r, g, b;
+    let maxAttempts = 100;
+    let attempt = 0;
+
+    do {
+      r = random(0, 255);
+      g = random(0, 255);
+      b = random(0, 255);
+      attempt++;
+    } while (attempt < maxAttempts && existingColors.some(color => colorSimilarity(color, `rgba(${r}, ${g}, ${b}, 1)`) >= similarity));
+
+    return `rgba(${r}, ${g}, ${b}, 1)`;
+  }
+
+  function colorSimilarity(color1, color2) {
+    let [r1, g1, b1] = color1.match(/\d+/g).map(Number);
+    let [r2, g2, b2] = color2.match(/\d+/g).map(Number);
+
+    let deltaR = Math.abs(r1 - r2);
+    let deltaG = Math.abs(g1 - g2);
+    let deltaB = Math.abs(b1 - b2);
+
+    return 1 - ((deltaR + deltaG + deltaB) / (255 * 3));
+  }
 
   fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
     .then(response => response.json())
     .then(data => {
+      console.log(data);
+
       const filteredData = data.data.filter(item => item.has_access === "1");
 
       const cafedraCounts = {};
-      const nameRuCounts = { "Преподаватель": 0 };
-      const rateCounts = {};
-
       filteredData.forEach(item => {
         cafedraCounts[item.cafedraNameRu] = (cafedraCounts[item.cafedraNameRu] || 0) + 1;
-        const nameRu = item.nameRu === "—" ? "Преподаватель" : item.nameRu;
-        nameRuCounts[nameRu] = (nameRuCounts[nameRu] || 0) + 1;
-        const rate = parseFloat(item.rate);
-        if (rate !== 0) {
-          rateCounts[rate] = (rateCounts[rate] || 0) + 1;
-        }
       });
 
-      const barCtx = document.getElementById('barChart').getContext('2d');
-      new Chart(barCtx, {
+      const cafedraChartCanvas = document.getElementById('cafedraChart');
+      const cafedraChartCtx = cafedraChartCanvas.getContext('2d');
+
+      const sortedCafedraNames = Object.keys(cafedraCounts).sort();
+      const sortedCafedraData = sortedCafedraNames.map(name => cafedraCounts[name]);
+
+      const cafedraChart = new Chart(cafedraChartCtx, {
         type: 'bar',
         data: {
-          labels: Object.keys(cafedraCounts),
+          labels: sortedCafedraNames,
           datasets: [{
-            label: 'Количество преподавателей',
-            data: Object.values(cafedraCounts),
-            backgroundColor: Object.keys(cafedraCounts).map(generateColor)
+            label: 'Кафедры',
+            data: sortedCafedraData,
+            backgroundColor: sortedCafedraNames.map(() => generateColor([], 0.3)),
           }]
         },
         options: {
+          responsive: true,
           scales: {
             y: {
               beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
             }
           }
         }
       });
 
-      const donutCtx = document.getElementById('donutChart').getContext('2d');
-      new Chart(donutCtx, {
+      const nameRuCounts = {};
+      filteredData.forEach(item => {
+        const name = (item.nameRu === "—" ? "Преподаватель" : item.nameRu);
+        nameRuCounts[name] = (nameRuCounts[name] || 0) + 1;
+      });
+
+      const nameRuChartCtx = document.getElementById('nameRuChart').getContext('2d');
+      const nameRuChart = new Chart(nameRuChartCtx, {
         type: 'doughnut',
         data: {
-          labels: Object.keys(nameRuCounts).sort((a, b) => nameRuCounts[a] - nameRuCounts[b]),
+          labels: Object.keys(nameRuCounts),
           datasets: [{
-            label: 'Типы преподавателей',
+            label: 'Колличество',
             data: Object.values(nameRuCounts),
-            backgroundColor: Object.keys(nameRuCounts).map(generateColor)
+            backgroundColor: Object.keys(nameRuCounts).map(() => generateColor([], 0.6)),
           }]
+        },
+        options: {
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  let label = context.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += context.raw + ' чел.';
+                  return label;
+                }
+              }
+            }
+          },
+          legend: {
+            display: true,
+          }
         }
       });
 
-      const pieCtx = document.getElementById('pieChart').getContext('2d');
-      new Chart(pieCtx, {
+      const rateChartCtx = document.getElementById('rateChart').getContext('2d');
+
+      const rateGroups = {};
+      filteredData.forEach(item => {
+        const rate = parseFloat(item.rate);
+        if (rate > 0) {
+          if (!rateGroups[rate]) {
+            rateGroups[rate] = 0;
+          }
+          rateGroups[rate]++;
+        }
+      });
+
+      const sortedKeys = Object.keys(rateGroups).map(parseFloat).sort((a, b) => a - b);
+
+      const sortedRateGroupsNumeric = {};
+      sortedKeys.forEach(key => {
+        sortedRateGroupsNumeric[key] = rateGroups[key];
+      });
+
+      const rateChart = new Chart(rateChartCtx, {
         type: 'pie',
         data: {
-          labels: Object.keys(rateCounts).map(rate => parseFloat(rate).toFixed(2)),
+          labels: Object.keys(sortedRateGroupsNumeric).map(rate => rate.toString()),
           datasets: [{
-            label: 'Ставки преподавателей',
-            data: Object.values(rateCounts),
-            backgroundColor: Object.keys(rateCounts).map(generateColor)
+            label: 'Колличество',
+            data: Object.values(sortedRateGroupsNumeric),
+            backgroundColor: Object.keys(sortedRateGroupsNumeric).map(() => generateColor([], 0.5)),
           }]
+        },
+        options: {
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  let label = context.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += context.raw + ' чел. (' + context.parsed + '%)';
+                  return label;
+                }
+              }
+            }
+          },
+          legend: {
+            display: true,
+          }
         }
       });
-
     })
     .catch(error => {
       console.error('Ошибка:', error);
     });
 
-  function generateColor() {
-    function random(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    let r = random(0, 255);
-    let g = random(0, 255);
-    let b = random(0, 255);
-
-    if ((r > 200 && g > 200 && b > 200) || (r < 100 && g < 100 && b < 100)) {
-      return generateColor();
-    }
-
-    for (let color of generatedColors) {
-      let [oldR, oldG, oldB] = color.match(/\d+/g).map(Number);
-      if (
-        Math.abs(r - oldR) + Math.abs(g - oldG) + Math.abs(b - oldB) <
-        255 * 0.05
-      ) {
-        return generateColor();
-      }
-    }
-
-    let newColor = `rgba(${r}, ${g}, ${b}, ${random(60, 90) / 100})`;
-    generatedColors.push(newColor);
-
-    return newColor;
-  }
 </script>
 
 </html>
