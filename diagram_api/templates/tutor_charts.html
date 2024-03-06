@@ -1,24 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "components/base.html" %}
+{% block title %} Tutor Diagram {% endblock title %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tutors</title>
-</head>
+{% block main %}
+<script>
+  fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
+    .then(response => response.json())
+    .then(data => {
+      console.log(data.data);
+    })
+    .catch(error => {
+      console.error('Ошибка:', error);
+    });
 
-<body>
-  <script>
-    fetch('https://platonus-mark.medkrmu.kz/dashboard/tutors')
-      .then(response => response.json())
-      .then(data => {
-        console.log(data);
-      })
-      .catch(error => {
-        console.error('Ошибка при получении данных:', error);
-      });
-
-  </script>
-</body>
-
-</html>
+</script>
+{% endblock main %}

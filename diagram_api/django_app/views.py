@@ -34,10 +34,6 @@ def tutor_charts(request):
     return render(request, "tutor_charts.html", {})
 
 
-def charts_second(request):
-    return render(request, "chart_second.html", {})
-
-
 @api_view(["GET"])
 def specialty_api(request) -> Response:
     try:

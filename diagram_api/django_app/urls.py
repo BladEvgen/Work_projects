@@ -8,6 +8,5 @@ urlpatterns = [
     path("load_data/", views.load_data, name="load_data"),
     path("charts/", views.charts, name="charts"),
     path("second_charts/", views.tutor_charts, name="tutor_charts"),
-    path("charts_2/", views.charts_second, name="charts2"),
     path("", views.home, name="home"),
 ]
