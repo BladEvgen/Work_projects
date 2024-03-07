@@ -304,4 +304,9 @@ function generateColor(existingColors, uniqueness) {
   return `hsl(${h}, ${s}%, ${l}%)`;
 }
 
-generateCharts();
+function scheduleGenerateCharts() {
+  generateCharts();
+  setInterval(generateCharts, 6 * 60 * 60 * 1000); // 6 часов
+}
+
+scheduleGenerateCharts();
