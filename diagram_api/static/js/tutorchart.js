@@ -179,7 +179,6 @@ async function generateRateChart(filteredData) {
       ],
     },
     options: {
-      responsive: true,
       plugins: {
         tooltip: {
           enabled: false,
@@ -310,5 +309,3 @@ function scheduleGenerateCharts() {
 }
 
 scheduleGenerateCharts();
-
-//test
