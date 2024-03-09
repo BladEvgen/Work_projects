@@ -197,10 +197,9 @@ async function generateRateChart(filteredData) {
     const color = rateChart.data.datasets[0].backgroundColor[index];
     rateChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>Ставка ${rate}:<strong> ${
       sortedRateGroupsNumeric[rate]
-    } чел. (${(
-      (sortedRateGroupsNumeric[rate] / filteredData.length) *
-      100
-    ).toFixed(2)}%)</div></strong>`;
+    }(${((sortedRateGroupsNumeric[rate] / filteredData.length) * 100).toFixed(
+      2
+    )}%)</div></strong>`;
   });
 }
 
