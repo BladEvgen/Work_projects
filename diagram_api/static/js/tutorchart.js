@@ -112,7 +112,6 @@ async function generateNameRuChart(filteredData) {
       ],
     },
     options: {
-      responsive: true,
       plugins: {
         tooltip: {
           enabled: false,
