@@ -311,3 +311,5 @@ function scheduleGenerateCharts() {
 }
 
 scheduleGenerateCharts();
+
+//test
