@@ -79,7 +79,7 @@ async function generateCafedraChart(filteredData) {
   const cafedraChartLegend = document.getElementById("cafedraChartLegend");
   sortedCafedraNames.forEach((name, index) => {
     const color = cafedraChart.data.datasets[0].backgroundColor[index];
-    cafedraChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>${name}: <strong>${cafedraCounts[name]} чел.</strong></div>`;
+    cafedraChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>${name}: <strong>${cafedraCounts[name]}</strong></div>`;
   });
 }
 
@@ -128,7 +128,7 @@ async function generateNameRuChart(filteredData) {
     const color = nameRuChart.data.datasets[0].backgroundColor[index];
     nameRuChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>${name}: <strong>${
       nameRuCounts[name]
-    } чел. (${((nameRuCounts[name] / filteredData.length) * 100).toFixed(
+    }(${((nameRuCounts[name] / filteredData.length) * 100).toFixed(
       2
     )}%)</strong></div>`;
   });
@@ -179,6 +179,7 @@ async function generateRateChart(filteredData) {
       ],
     },
     options: {
+      responsive: true,
       plugins: {
         tooltip: {
           enabled: false,
