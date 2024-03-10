@@ -128,7 +128,7 @@ async function generateNameRuChart(filteredData) {
     const color = nameRuChart.data.datasets[0].backgroundColor[index];
     nameRuChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>${name}: <strong>${
       nameRuCounts[name]
-    }(${((nameRuCounts[name] / filteredData.length) * 100).toFixed(
+    } (${((nameRuCounts[name] / filteredData.length) * 100).toFixed(
       2
     )}%)</strong></div>`;
   });
@@ -195,7 +195,7 @@ async function generateRateChart(filteredData) {
     const color = rateChart.data.datasets[0].backgroundColor[index];
     rateChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>Ставка ${rate}:<strong> ${
       sortedRateGroupsNumeric[rate]
-    }(${((sortedRateGroupsNumeric[rate] / filteredData.length) * 100).toFixed(
+    } (${((sortedRateGroupsNumeric[rate] / filteredData.length) * 100).toFixed(
       2
     )}%)</div></strong>`;
   });
@@ -258,7 +258,19 @@ async function generateYearsChart(filteredData) {
       },
     },
   });
-
+  function getYearText(year) {
+    let text = " лет";
+    if (year % 10 == 1 && year % 100 != 11) {
+      text = " год";
+    } else if (
+      year % 10 >= 2 &&
+      year % 10 <= 4 &&
+      (year % 100 < 10 || year % 100 >= 20)
+    ) {
+      text = " года";
+    }
+    return year + text;
+  }
   const yearsChartLegend = document.getElementById("yearsChartLegend");
   yearsChartLegend.innerHTML = "";
 
@@ -267,7 +279,7 @@ async function generateYearsChart(filteredData) {
     legendItem.classList.add("legend-item");
 
     const span = document.createElement("span");
-    span.textContent = `${year} лет: `;
+    span.textContent = getYearText(year) + ": ";
     legendItem.appendChild(span);
 
     const strong = document.createElement("strong");
