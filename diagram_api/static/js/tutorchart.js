@@ -99,7 +99,7 @@ async function generateNameRuChart(filteredData) {
       labels: Object.keys(nameRuCounts),
       datasets: [
         {
-          label: "Колличество",
+          label: "Количество",
           data: Object.values(nameRuCounts),
           backgroundColor: [
             "rgba(54, 162, 235, 0.8)",
@@ -118,19 +118,33 @@ async function generateNameRuChart(filteredData) {
         },
       },
       legend: {
-        display: true,
+        display: false,
       },
     },
   });
 
   const nameRuChartLegend = document.getElementById("nameRuChartLegend");
+  nameRuChartLegend.innerHTML = "";
+
   Object.keys(nameRuCounts).forEach((name, index) => {
     const color = nameRuChart.data.datasets[0].backgroundColor[index];
-    nameRuChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>${name}: <strong>${
-      nameRuCounts[name]
-    } чел. (${((nameRuCounts[name] / filteredData.length) * 100).toFixed(
-      2
-    )}%)</strong></div>`;
+
+    const legendItem = document.createElement("div");
+    legendItem.classList.add("legend-item");
+
+    const legendColor = document.createElement("span");
+    legendColor.classList.add("legend-color");
+    legendColor.style.backgroundColor = color;
+    legendItem.appendChild(legendColor);
+
+    const legendText = document.createElement("span");
+    legendText.textContent = `${name}: ${nameRuCounts[name]} чел. (${(
+      (nameRuCounts[name] / filteredData.length) *
+      100
+    ).toFixed(2)}%)`;
+    legendItem.appendChild(legendText);
+
+    nameRuChartLegend.appendChild(legendItem);
   });
 }
 
