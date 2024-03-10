@@ -128,7 +128,7 @@ async function generateNameRuChart(filteredData) {
     const color = nameRuChart.data.datasets[0].backgroundColor[index];
     nameRuChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>${name}: <strong>${
       nameRuCounts[name]
-    } (${((nameRuCounts[name] / filteredData.length) * 100).toFixed(
+    } чел. (${((nameRuCounts[name] / filteredData.length) * 100).toFixed(
       2
     )}%)</strong></div>`;
   });
@@ -195,9 +195,10 @@ async function generateRateChart(filteredData) {
     const color = rateChart.data.datasets[0].backgroundColor[index];
     rateChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>Ставка ${rate}:<strong> ${
       sortedRateGroupsNumeric[rate]
-    } (${((sortedRateGroupsNumeric[rate] / filteredData.length) * 100).toFixed(
-      2
-    )}%)</div></strong>`;
+    } чел. (${(
+      (sortedRateGroupsNumeric[rate] / filteredData.length) *
+      100
+    ).toFixed(2)}%)</div></strong>`;
   });
 }
 
@@ -279,7 +280,7 @@ async function generateYearsChart(filteredData) {
     legendItem.classList.add("legend-item");
 
     const span = document.createElement("span");
-    span.textContent = getYearText(year) + ": ";
+    span.textContent = getYearText(year) + ":  ";
     legendItem.appendChild(span);
 
     const strong = document.createElement("strong");
