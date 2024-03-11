@@ -195,10 +195,9 @@ async function generateRateChart(filteredData) {
     const color = rateChart.data.datasets[0].backgroundColor[index];
     rateChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>Ставка ${rate}:<strong> ${
       sortedRateGroupsNumeric[rate]
-    }  (${(
-      (sortedRateGroupsNumeric[rate] / filteredData.length) *
-      100
-    ).toFixed(2)}%)</div></strong>`;
+    }  (${((sortedRateGroupsNumeric[rate] / filteredData.length) * 100).toFixed(
+      2
+    )}%)</div></strong>`;
   });
 }
 
@@ -259,7 +258,7 @@ async function generateYearsChart(filteredData) {
       },
     },
   });
-// склонение чтобы было для годов
+  // склонение чтобы было для годов
   function getYearText(year) {
     let text = " лет";
     if (year % 10 == 1 && year % 100 != 11) {
@@ -283,7 +282,7 @@ async function generateYearsChart(filteredData) {
   const step = 20;
   let rangeStart = minAge;
   let rangeEnd = minAge + step;
-  
+
   while (rangeEnd <= maxAge) {
     const count = sortedYears.reduce((acc, year) => {
       const age = parseInt(year);
@@ -292,7 +291,7 @@ async function generateYearsChart(filteredData) {
       }
       return acc;
     }, 0);
-    
+
     const percentage = ((count / filteredData.length) * 100).toFixed(2);
 
     const legendItem = document.createElement("div");
@@ -307,7 +306,7 @@ async function generateYearsChart(filteredData) {
     legendItem.appendChild(strong);
 
     yearsChartLegend.appendChild(legendItem);
-    
+
     rangeStart += step;
     rangeEnd += step;
   }
@@ -322,7 +321,9 @@ async function generateYearsChart(filteredData) {
   }, 0);
 
   if (remainderCount > 0) {
-    const percentage = ((remainderCount / filteredData.length) * 100).toFixed(2);
+    const percentage = ((remainderCount / filteredData.length) * 100).toFixed(
+      2
+    );
 
     const legendItem = document.createElement("div");
     legendItem.classList.add("legend-item");
@@ -370,3 +371,4 @@ function scheduleGenerateCharts() {
 }
 
 scheduleGenerateCharts();
+//test
