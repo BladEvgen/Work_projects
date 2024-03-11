@@ -70,7 +70,7 @@ async function generateCafedraChart(filteredData) {
       },
       plugins: {
         legend: {
-          display: true,
+          display: false,
         },
       },
     },
@@ -118,7 +118,7 @@ async function generateNameRuChart(filteredData) {
         },
       },
       legend: {
-        display: true,
+        display: false,
       },
     },
   });
@@ -128,7 +128,7 @@ async function generateNameRuChart(filteredData) {
     const color = nameRuChart.data.datasets[0].backgroundColor[index];
     nameRuChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>${name}: <strong>${
       nameRuCounts[name]
-    } чел. (${((nameRuCounts[name] / filteredData.length) * 100).toFixed(
+    }  (${((nameRuCounts[name] / filteredData.length) * 100).toFixed(
       2
     )}%)</strong></div>`;
   });
@@ -185,7 +185,7 @@ async function generateRateChart(filteredData) {
         },
       },
       legend: {
-        display: true,
+        display: false,
       },
     },
   });
@@ -195,7 +195,7 @@ async function generateRateChart(filteredData) {
     const color = rateChart.data.datasets[0].backgroundColor[index];
     rateChartLegend.innerHTML += `<div class="legend-item"><span class="legend-color" style="background-color: ${color}"></span>Ставка ${rate}:<strong> ${
       sortedRateGroupsNumeric[rate]
-    } чел. (${(
+    }  (${(
       (sortedRateGroupsNumeric[rate] / filteredData.length) *
       100
     ).toFixed(2)}%)</div></strong>`;
@@ -259,6 +259,7 @@ async function generateYearsChart(filteredData) {
       },
     },
   });
+// склонение чтобы было для годов
   function getYearText(year) {
     let text = " лет";
     if (year % 10 == 1 && year % 100 != 11) {
@@ -272,23 +273,70 @@ async function generateYearsChart(filteredData) {
     }
     return year + text;
   }
+
   const yearsChartLegend = document.getElementById("yearsChartLegend");
   yearsChartLegend.innerHTML = "";
 
-  sortedYears.forEach((year) => {
+  // Разделение на диапазоны
+  const minAge = parseInt(sortedYears[0]);
+  const maxAge = parseInt(sortedYears[sortedYears.length - 1]);
+  const step = 20;
+  let rangeStart = minAge;
+  let rangeEnd = minAge + step;
+  
+  while (rangeEnd <= maxAge) {
+    const count = sortedYears.reduce((acc, year) => {
+      const age = parseInt(year);
+      if (age >= rangeStart && age < rangeEnd) {
+        acc += yearsCounts[year];
+      }
+      return acc;
+    }, 0);
+    
+    const percentage = ((count / filteredData.length) * 100).toFixed(2);
+
     const legendItem = document.createElement("div");
     legendItem.classList.add("legend-item");
 
     const span = document.createElement("span");
-    span.textContent = getYearText(year) + ":  ";
+    span.textContent = `${rangeStart} - ${rangeEnd - 1} лет: `;
     legendItem.appendChild(span);
 
     const strong = document.createElement("strong");
-    strong.textContent = yearsCounts[year];
+    strong.textContent = `${count} (${percentage}%)`;
     legendItem.appendChild(strong);
 
     yearsChartLegend.appendChild(legendItem);
-  });
+    
+    rangeStart += step;
+    rangeEnd += step;
+  }
+
+  // Остаток
+  const remainderCount = sortedYears.reduce((acc, year) => {
+    const age = parseInt(year);
+    if (age >= rangeStart) {
+      acc += yearsCounts[year];
+    }
+    return acc;
+  }, 0);
+
+  if (remainderCount > 0) {
+    const percentage = ((remainderCount / filteredData.length) * 100).toFixed(2);
+
+    const legendItem = document.createElement("div");
+    legendItem.classList.add("legend-item");
+
+    const span = document.createElement("span");
+    span.textContent = `Больше ${rangeStart - 1} лет: `;
+    legendItem.appendChild(span);
+
+    const strong = document.createElement("strong");
+    strong.textContent = `${remainderCount} (${percentage}%)`;
+    legendItem.appendChild(strong);
+
+    yearsChartLegend.appendChild(legendItem);
+  }
 }
 
 function generateColor(existingColors, uniqueness) {
