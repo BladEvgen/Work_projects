@@ -9,5 +9,5 @@ urlpatterns = [
     path("charts/", views.charts, name="charts"),
     path("second_charts/", views.tutor_charts, name="tutor_charts"),
     path("", views.home, name="home"),
-    path("birthday", views.birthday, name="birthday"),
+    path("birthday/", views.birthday, name="birthday"),
 ]
