@@ -105,26 +105,29 @@ def load_data(request):
 
 def comments(request):
     try:
-        comments_enabled = request.GET.get("comments_enabled", True)
-        comments_enabled = True if comments_enabled == "true" else False
-        ignore_vdovtsev = True  # Указать значение ignore_vdovtsev, если нужно
-        utils.get_comments_from_db(comments_enabled, ignore_vdovtsev)
+        if request.method == "GET" and "comments_enabled" in request.GET:
+            comments_enabled = request.GET.get("comments_enabled") == "true"
+            ignore_vdovtsev = True  # Указать значение ignore_vdovtsev, если нужно
+            utils.get_comments_from_db(comments_enabled, ignore_vdovtsev)
 
-        # Путь для сохранения файла
-        file_path = settings.STATIC_ROOT / (
-            "tutor_rating_comments.xlsx" if comments_enabled else "tutor_raiting.xlsx"
-        )
-
-        with open(file_path, "rb") as file:
-            response = HttpResponse(
-                file.read(), content_type="application/octet-stream"
-            )
-            response["Content-Disposition"] = (
-                'attachment; filename="tutor_rating_comments.xlsx"'
+            file_path = settings.STATIC_ROOT / (
+                "tutor_rating_comments.xlsx"
                 if comments_enabled
-                else 'attachment; filename="tutor_raiting.xlsx"'
+                else "tutor_raiting.xlsx"
             )
-            return response
+
+            with open(file_path, "rb") as file:
+                response = HttpResponse(
+                    file.read(), content_type="application/octet-stream"
+                )
+                response["Content-Disposition"] = (
+                    'attachment; filename="tutor_rating_comments.xlsx"'
+                    if comments_enabled
+                    else 'attachment; filename="tutor_raiting.xlsx"'
+                )
+                return response
+        else:
+            return render(request, "get_comments.html")
     except Exception as e:
         return HttpResponse(str(e), status=500)
 

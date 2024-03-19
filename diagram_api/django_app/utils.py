@@ -1,6 +1,6 @@
 import json
 import os
-
+from django.conf import settings
 import mysql.connector
 import openpyxl
 from dotenv import load_dotenv
@@ -137,7 +137,8 @@ def write_to_excel(data, comments_data, comments_enabled=True):
         for comment in comments[1:]:
             ws.append(["", "", "", "", comment])
 
-    wb.save(filename)
+    file_path = os.path.join(settings.STATIC_ROOT, filename)
+    wb.save(file_path)
 
 
 def get_comments_from_db(comments_enabled=True, ignore_vdovtsev=True):

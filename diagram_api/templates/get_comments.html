@@ -28,13 +28,13 @@
         downloadButtons.forEach(function (button) {
             button.addEventListener('click', function () {
                 const commentsEnabled = button.getAttribute('data-comments') === 'true';
-                downloadFile(commentsEnabled);
+                generateFile(commentsEnabled);
             });
         });
 
-        function downloadFile(commentsEnabled) {
+        function generateFile(commentsEnabled) {
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', '/get_comments/?comments_enabled=' + commentsEnabled, true);
+            xhr.open('GET', `/get_comments/?comments_enabled=${commentsEnabled}`, true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.responseType = 'blob';
 
