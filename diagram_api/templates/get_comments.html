@@ -36,6 +36,7 @@
         });
 
         function generateFile(commentsEnabled) {
+            console.log('Отправка запроса на сервер для генерации файла...');
             const xhr = new XMLHttpRequest();
             xhr.open('GET', `/get_comments/?comments_enabled=${commentsEnabled}`, true);
             xhr.setRequestHeader('Content-Type', 'application/json');
@@ -62,5 +63,6 @@
             xhr.send();
         }
     });
+
 
 </script>
