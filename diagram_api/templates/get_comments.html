@@ -1,3 +1,4 @@
+<!-- get_comments.html -->
 {% extends "components/base.html" %}
 {% block title %} Load Data {% endblock title %}
 {% load static %}
@@ -8,8 +9,10 @@
             <div class="form-container bg-secondary p-4 rounded">
                 <h3 class="text-center text-light mb-4">Скачать Рэйтинг преподавателей</h3>
                 <div class="d-flex justify-content-around">
-                    <button id="with-comments" class="btn btn-primary btn-block">Рэйтинг с комментариями</button>
-                    <button id="without-comments" class="btn btn-primary btn-block">Рэйтинг без комментариев</button>
+                    <button type="button" class="btn btn-primary btn-block download-btn" data-comments="true">Рэйтинг с
+                        комментариями</button>
+                    <button type="button" class="btn btn-primary btn-block download-btn" data-comments="false">Рэйтинг
+                        без комментариев</button>
                 </div>
             </div>
         </div>
@@ -18,28 +21,37 @@
 {% endblock main %}
 
 <script>
+
     document.addEventListener('DOMContentLoaded', function () {
-        document.getElementById('with-comments').addEventListener('click', function () {
-            downloadRating(true);
+        const downloadButtons = document.querySelectorAll('.download-btn');
+
+        downloadButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                const commentsEnabled = button.getAttribute('data-comments') === 'true';
+                downloadFile(commentsEnabled);
+            });
         });
 
-        document.getElementById('without-comments').addEventListener('click', function () {
-            downloadRating(false);
-        });
-
-        function downloadRating(withComments) {
-            let xhr = new XMLHttpRequest();
-            xhr.open('GET', '/get_comments/?with_comments=' + withComments, true);
+        function downloadFile(commentsEnabled) {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/get_comments/?comments_enabled=' + commentsEnabled, true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.responseType = 'blob';
 
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    let blob = xhr.response;
-                    let link = document.createElement('a');
-                    link.href = window.URL.createObjectURL(blob);
-                    link.download = 'get_comments.html';
-                    link.click();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        const blob = new Blob([xhr.response], { type: 'application/octet-stream' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = commentsEnabled ? 'tutor_rating_comments.xlsx' : 'tutor_raiting.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                    } else {
+                        console.error('Ошибка при загрузке файла:', xhr.status);
+                    }
                 }
             };
 

@@ -1,6 +1,7 @@
 import datetime
 from contextlib import closing
 
+from django.conf import settings
 from django.core.cache import cache as django_cache
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
@@ -9,8 +10,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from . import models, utils
-from .config import execute_query, journal_connection, platonus_connection
+from django_app import models, utils
+from django_app.config import execute_query, journal_connection, platonus_connection
 
 STUDENTS = {
     "students": "isStudent = 1",
@@ -102,29 +103,30 @@ def load_data(request):
     return render(request, "load_data.html", context)
 
 
-def comments(request) -> HttpResponse:
-    with_comments = request.GET.get("with_comments", False)
-    context = {}
+def comments(request):
     try:
-        with_comments = str(with_comments).lower() == "true"
+        comments_enabled = request.GET.get("comments_enabled", True)
+        comments_enabled = True if comments_enabled == "true" else False
+        ignore_vdovtsev = True  # Указать значение ignore_vdovtsev, если нужно
+        utils.get_comments_from_db(comments_enabled, ignore_vdovtsev)
 
-        if with_comments:
-            comments = utils.get_comments_from_db(
-                comments_enabled=True, ignore_vdovtsev=True
+        # Путь для сохранения файла
+        file_path = settings.STATIC_ROOT / (
+            "tutor_rating_comments.xlsx" if comments_enabled else "tutor_raiting.xlsx"
+        )
+
+        with open(file_path, "rb") as file:
+            response = HttpResponse(
+                file.read(), content_type="application/octet-stream"
             )
-        else:
-            comments = utils.get_comments_from_db(
-                comments_enabled=False, ignore_vdovtsev=True
+            response["Content-Disposition"] = (
+                'attachment; filename="tutor_rating_comments.xlsx"'
+                if comments_enabled
+                else 'attachment; filename="tutor_raiting.xlsx"'
             )
-
-        # Предположим, что `comments` - это строка или объект bytes, содержащий HTML-данные
-        response = HttpResponse(comments, content_type="text/html")
-        response["Content-Disposition"] = 'attachment; filename="get_comments.html"'
-        return response
-
+            return response
     except Exception as e:
-        context["error"] = str(e)
-        return HttpResponse(status=500, content=str(e))
+        return HttpResponse(str(e), status=500)
 
 
 @api_view(["GET"])
