@@ -28,15 +28,6 @@ DEBUG = False
 ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080",
-    "http://localhost:8000",
-    "http://127.0.0.1:9000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5000",
-    "http://127.0.0.1",
-    "http://localhost:5000",
-    "http://91.185.12.100:5000",
-    "https://91.185.12.102",
     "https://platonus-mark.medkrmu.kz",
     "http://platonus-mark.medkrmu.kz",
     "https://dashboard.medkrmu.kz",
@@ -44,7 +35,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # ВЫКЛЮЧИТЬ МЕНЯ ПОТОМ
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 
 # Application definition
 
