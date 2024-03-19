@@ -6,6 +6,7 @@ urlpatterns = [
     path("api/diagram/", views.specialty_api, name="speciality_api"),
     path("api/get_marks/", views.get_marks_for_tutor, name="get_marks"),
     path("load_data/", views.load_data, name="load_data"),
+    path("get_comments/", views.comments, name="get_comments"),
     path("charts/", views.charts, name="charts"),
     path("second_charts/", views.tutor_charts, name="tutor_charts"),
     path("", views.home, name="home"),
