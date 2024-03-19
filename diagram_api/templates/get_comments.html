@@ -21,13 +21,16 @@
 {% endblock main %}
 
 <script>
-
+    // main.js
     document.addEventListener('DOMContentLoaded', function () {
         const downloadButtons = document.querySelectorAll('.download-btn');
 
         downloadButtons.forEach(function (button) {
             button.addEventListener('click', function () {
                 const commentsEnabled = button.getAttribute('data-comments') === 'true';
+                console.log('Нажата кнопка: ', button.textContent);
+                console.log('Параметр comments_enabled: ', commentsEnabled);
+
                 generateFile(commentsEnabled);
             });
         });
@@ -49,6 +52,7 @@
                         document.body.appendChild(a);
                         a.click();
                         window.URL.revokeObjectURL(url);
+                        console.log('Файл успешно загружен');
                     } else {
                         console.error('Ошибка при загрузке файла:', xhr.status);
                     }
@@ -58,4 +62,5 @@
             xhr.send();
         }
     });
+
 </script>
