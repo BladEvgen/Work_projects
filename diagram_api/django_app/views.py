@@ -2,7 +2,7 @@ import datetime
 from contextlib import closing
 
 from django.core.cache import cache as django_cache
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
@@ -100,6 +100,31 @@ def load_data(request):
         context["error"] = str(e)
 
     return render(request, "load_data.html", context)
+
+
+def comments(request) -> HttpResponse:
+    with_comments = request.GET.get("with_comments", False)
+    context = {}
+    try:
+        with_comments = str(with_comments).lower() == "true"
+
+        if with_comments:
+            comments = utils.get_comments_from_db(
+                comments_enabled=True, ignore_vdovtsev=True
+            )
+        else:
+            comments = utils.get_comments_from_db(
+                comments_enabled=False, ignore_vdovtsev=True
+            )
+
+        # Предположим, что `comments` - это строка или объект bytes, содержащий HTML-данные
+        response = HttpResponse(comments, content_type="text/html")
+        response["Content-Disposition"] = 'attachment; filename="get_comments.html"'
+        return response
+
+    except Exception as e:
+        context["error"] = str(e)
+        return HttpResponse(status=500, content=str(e))
 
 
 @api_view(["GET"])
