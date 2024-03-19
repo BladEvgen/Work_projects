@@ -1,27 +1,51 @@
-<!-- get_comments.html -->
 {% extends "components/base.html" %}
-{% block title %} Load Data {% endblock title %}
 {% load static %}
+{% block title %} Get Comments {% endblock title %}
 {% block main %}
-<div class="container">
+<style>
+    .container {
+        border: none !important;
+    }
+
+    .card {
+        border-radius: 15px;
+    }
+
+    .btn {
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: scale(1.05);
+    }
+</style>
+<div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="form-container bg-secondary p-4 rounded">
-                <h3 class="text-center text-light mb-4">Скачать Рэйтинг преподавателей</h3>
-                <div class="d-flex justify-content-around">
-                    <button type="button" class="btn btn-primary btn-block download-btn" data-comments="true">Рэйтинг с
-                        комментариями</button>
-                    <button type="button" class="btn btn-primary btn-block download-btn" data-comments="false">Рэйтинг
-                        без комментариев</button>
+            <div class="card text-white bg-dark mb-3 shadow-lg">
+                <div class="card-header text-center">
+                    <h3><i class="fas fa-download text-warning"></i> Скачать Рэйтинг преподавателей</h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-center">Выберите тип рейтинга, который вы хотите скачать:</p>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-primary download-btn" data-comments="true">
+                            <i class="fas fa-comments"></i> Рэйтинг с комментариями
+                        </button>
+                        <button type="button" class="btn btn-outline-success download-btn" data-comments="false">
+                            <i class="fas fa-comment-slash"></i> Рэйтинг без комментариев
+                        </button>
+                    </div>
                 </div>
             </div>
+            <div id="status" class="alert mt-3" role="alert" style="display: none;"></div>
         </div>
     </div>
 </div>
 {% endblock main %}
 
+{% block scripts %}
 <script>
-    // main.js
     document.addEventListener('DOMContentLoaded', function () {
         const downloadButtons = document.querySelectorAll('.download-btn');
 
@@ -35,34 +59,45 @@
             });
         });
 
-        function generateFile(commentsEnabled) {
-            console.log('Отправка запроса на сервер для генерации файла...');
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', `/get_comments/?comments_enabled=${commentsEnabled}`, true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.responseType = 'blob';
+        async function generateFile(commentsEnabled) {
+            const status = document.getElementById('status');
+            const downloadButtons = document.querySelectorAll('.download-btn');
+            downloadButtons.forEach(btn => btn.disabled = true);
 
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    if (xhr.status === 200) {
-                        const blob = new Blob([xhr.response], { type: 'application/octet-stream' });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = commentsEnabled ? 'tutor_rating_comments.xlsx' : 'tutor_raiting.xlsx';
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        console.log('Файл успешно загружен');
-                    } else {
-                        console.error('Ошибка при загрузке файла:', xhr.status);
-                    }
+            try {
+                console.log('Отправка запроса на сервер для генерации файла...');
+                status.className = 'alert alert-primary';
+                status.textContent = 'Генерация файла начата...';
+                status.style.display = 'block';
+
+                const response = await fetch(`/get_comments/?comments_enabled=${commentsEnabled}`);
+                if (!response.ok) {
+                    throw new Error('Ошибка при загрузке файла');
                 }
-            };
 
-            xhr.send();
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = commentsEnabled ? 'tutor_rating_comments.xlsx' : 'tutor_rating.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                console.log('Файл успешно загружен');
+                status.className = 'alert alert-success';
+                status.textContent = 'Файл успешно сгенерирован и загружен';
+                setTimeout(() => {
+                    status.style.display = 'none';
+                    downloadButtons.forEach(btn => btn.disabled = false);
+                }, 3000);
+            } catch (error) {
+                console.error(error);
+                status.className = 'alert alert-danger';
+                status.textContent = 'Обратитесь к Администратору';
+                status.style.display = 'block';
+                downloadButtons.forEach(btn => btn.disabled = false);
+            }
         }
     });
-
-
 </script>
+{% endblock scripts %}
