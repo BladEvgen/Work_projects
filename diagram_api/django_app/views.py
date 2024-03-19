@@ -105,9 +105,10 @@ def load_data(request):
 
 def comments(request):
     try:
+        pass
         if request.method == "GET" and "comments_enabled" in request.GET:
             comments_enabled = request.GET.get("comments_enabled") == "true"
-            ignore_vdovtsev = True  # Указать значение ignore_vdovtsev, если нужно
+            ignore_vdovtsev = True
             utils.get_comments_from_db(comments_enabled, ignore_vdovtsev)
 
             file_path = settings.STATIC_ROOT / (
@@ -129,7 +130,7 @@ def comments(request):
         else:
             return render(request, "get_comments.html")
     except Exception as e:
-        return HttpResponse(str(e), status=500)
+        return HttpResponse(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["GET"])
