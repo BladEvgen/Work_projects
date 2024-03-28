@@ -22,8 +22,8 @@ async function generateCharts() {
 
     console.log(data);
 
-    const filteredData = data.data.filter((item) => item.has_access === "1");
-
+    const filteredData = data.data.filter((item) => item.has_access === 1);
+    console.log("FilteredData:", filteredData);
     await generateCafedraChart(filteredData);
     await generateNameRuChart(filteredData);
     await generateRateChart(filteredData);
