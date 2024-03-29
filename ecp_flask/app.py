@@ -28,9 +28,9 @@ db_cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS signed_files (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        original_file_name VARCHAR(255),
-        signed_file_path VARCHAR(255),
-        sign_time DATETIME DEFAULT CURRENT_TIMESTAMP
+        original_file_name VARCHAR(255) NOT NULL,
+        signed_file_path VARCHAR(255) NOT NULL,
+        sign_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
 """
 )
