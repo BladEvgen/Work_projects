@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Подписание файла</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            box-shadow: 0px 0px 20px rgba(0,0,0,0.1);
+        }
+
+        input[type="file"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 600px) {
+            form {
+                padding: 10px;
+            }
+        }
+    </style>
+  <meta charset="UTF-8">
+</head>
+<body>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <label>Файл</label>
+        <input type="file" id="fileInput" name="file" multiple>
+        <label>ЭЦП</label>
+        <input type="file" id="keyPath" name="keyPath" multiple>
+        <input type="password" id="password" name="password" placeholder="Пароль"><br>
+        <button type="button" onclick="signFiles()">Подписать файлы</button>
+    </form>
+
+    <script>
+        async function signFiles() {
+            try {
+                console.log('Starting file signing process...');
+                
+                const fileInputs = document.querySelectorAll('#fileInput');
+                const keyPaths = document.querySelectorAll('#keyPath'); 
+                const password = document.getElementById('password').value;
+
+                const formData = new FormData();
+
+                fileInputs.forEach(function(input) {
+                    Array.from(input.files).forEach(function(file) {
+                        formData.append(input.name, file);
+                    });
+                });
+
+                keyPaths.forEach(function(input) {
+                    Array.from(input.files).forEach(function(file) {
+                        formData.append(input.name, file);
+                    });
+                });
+
+                formData.append('password', password);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'http://91.185.12.100:5000/sign', true);
+                xhr.responseType = 'blob';
+
+                xhr.onload = function() {
+                    console.log('Response received...');
+                    if (xhr.status === 200) {
+                        const blob = new Blob([xhr.response], { type: 'application/octet-stream' });
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = window.URL.createObjectURL(blob);
+                        downloadLink.setAttribute('download', 'your_filename.extension');
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                        console.log('File signed and downloaded successfully.');
+                    } else {
+                        console.error('Failed to sign files. Status code: ' + xhr.status);
+                    }
+                };
+
+                xhr.onerror = function() {
+                    console.error('An error occurred while signing files.');
+                };
+
+                xhr.send(formData);
+            } catch (error) {
+                console.error('Error in signing files:', error);
+            }
+        }
+
+
+    </script>
+</body>
+</html>
