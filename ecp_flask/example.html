@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Подписание файла</title>
     <style>
@@ -11,10 +12,11 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
-            box-shadow: 0px 0px 20px rgba(0,0,0,0.1);
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
         }
 
-        input[type="file"], input[type="password"] {
+        input[type="file"],
+        input[type="password"] {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
@@ -41,14 +43,15 @@
             }
         }
     </style>
-  <meta charset="UTF-8">
+    <meta charset="UTF-8">
 </head>
+
 <body>
     <form id="uploadForm" enctype="multipart/form-data">
         <label>Файл</label>
-        <input type="file" id="fileInput" name="file" multiple>
+        <input type="file" id="fileInput" name="file" multiple accept=".pdf">
         <label>ЭЦП</label>
-        <input type="file" id="keyPath" name="keyPath" multiple>
+        <input type="file" id="keyPath" name="keyPath" multiple accept=".p12">
         <input type="password" id="password" name="password" placeholder="Пароль"><br>
         <button type="button" onclick="signFiles()">Подписать файлы</button>
     </form>
@@ -57,21 +60,26 @@
         async function signFiles() {
             try {
                 console.log('Starting file signing process...');
-                
+
                 const fileInputs = document.querySelectorAll('#fileInput');
-                const keyPaths = document.querySelectorAll('#keyPath'); 
+                const keyPaths = document.querySelectorAll('#keyPath');
                 const password = document.getElementById('password').value;
+
+                if (!fileInputs[0].files.length || !keyPaths[0].files.length || !password.trim()) {
+                    alert('Пожалуйста, заполните все поля формы.');
+                    return;
+                }
 
                 const formData = new FormData();
 
-                fileInputs.forEach(function(input) {
-                    Array.from(input.files).forEach(function(file) {
+                fileInputs.forEach(function (input) {
+                    Array.from(input.files).forEach(function (file) {
                         formData.append(input.name, file);
                     });
                 });
 
-                keyPaths.forEach(function(input) {
-                    Array.from(input.files).forEach(function(file) {
+                keyPaths.forEach(function (input) {
+                    Array.from(input.files).forEach(function (file) {
                         formData.append(input.name, file);
                     });
                 });
@@ -82,13 +90,13 @@
                 xhr.open('POST', 'http://91.185.12.100:5000/sign', true);
                 xhr.responseType = 'blob';
 
-                xhr.onload = function() {
+                xhr.onload = function () {
                     console.log('Response received...');
                     if (xhr.status === 200) {
                         const blob = new Blob([xhr.response], { type: 'application/octet-stream' });
                         const downloadLink = document.createElement('a');
                         downloadLink.href = window.URL.createObjectURL(blob);
-                        downloadLink.setAttribute('download', 'your_filename.extension');
+                        downloadLink.setAttribute('download', 'test.pdf');
                         document.body.appendChild(downloadLink);
                         downloadLink.click();
                         document.body.removeChild(downloadLink);
@@ -98,7 +106,7 @@
                     }
                 };
 
-                xhr.onerror = function() {
+                xhr.onerror = function () {
                     console.error('An error occurred while signing files.');
                 };
 
@@ -108,7 +116,11 @@
             }
         }
 
+        document.getElementById('uploadForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+        });
 
     </script>
 </body>
+
 </html>

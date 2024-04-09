@@ -1,14 +1,15 @@
-import base64
-import datetime
-import json
 import os
-from uuid import uuid4
-
-import mysql.connector
+import json
+import base64
 import requests
-from dotenv import load_dotenv
-from flask import Flask, jsonify, make_response, request
+import datetime
+import mysql.connector
+from flask import Flask, request, make_response, jsonify
 from flask_cors import CORS
+from dotenv import load_dotenv
+from uuid import uuid4
+from PyPDF2 import PdfFileWriter, PdfFileReader
+from io import BytesIO
 
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(dotenv_path):
@@ -16,7 +17,6 @@ if os.path.exists(dotenv_path):
 
 app = Flask(__name__)
 CORS(app)
-
 
 db_connection = mysql.connector.connect(
     host=os.getenv("DB_HOST"),
@@ -46,10 +46,19 @@ def save_to_database(original_file_name, signed_file_path):
     db_cursor.execute(sql, val)
     db_connection.commit()
 
-    db_cursor.execute("SELECT LAST_INSERT_ID()")
-    file_id = db_cursor.fetchone()[0]
 
-    return file_id
+def generate_table(signers_data):
+    table = "<table border='1'><tr><th>Организация/отправитель</th><th>Подписано</th><th>MIIUoQYJ...H9Wuz3/0=</th><th>Время подписи</th></tr>"
+    for signer in signers_data:
+        organization = signer["certificates"][0]["subject"]["organization"]
+        common_name = signer["certificates"][0]["subject"]["commonName"]
+        gen_time = signer["tsp"]["genTime"]
+        gen_time = datetime.datetime.strptime(
+            gen_time, "%Y-%m-%dT%H:%M:%S.%f+00:00"
+        ).strftime("%d.%m.%Y %H:%M")
+        table += f"<tr><td>{organization}</td><td>{common_name}</td><td>MIIUoQYJ...H9Wuz3/0=</td><td>{gen_time}</td></tr>"
+    table += "</table>"
+    return table
 
 
 @app.route("/sign", methods=["POST"])
@@ -58,10 +67,6 @@ def sign_file():
     files = request.files.getlist("file")
     password = request.form["password"]
 
-    key_path = ""
-    file_path = ""
-    file_id = None
-
     for file in key_files:
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
         key_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
@@ -69,54 +74,23 @@ def sign_file():
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
 
-    returnfile, file_id = sign_file_gos(key_path, password, file_path)
+    returnfile, signers_data = sign_file_gos(key_path, password, file_path)
 
-    verification_result = get_verification_result(file_id)
+    verify_response = verify_data(signers_data)
+    if verify_response:
+        table = generate_table(verify_response["signers"])
+        returnfile += f"<br/><br/>{table}"
+
+        signed_pdf_path = add_table_to_pdf(file_path, table, verify_response["id"])
+        os.remove(file_path)
+
+        response = make_response(send_file(signed_pdf_path, as_attachment=True))
+        response.headers["Content-Disposition"] = 'attachment; filename="test.pdf"'
+        return response
 
     response = make_response(returnfile)
-    print_verification_info(verification_result)
-
     response.headers["Content-Disposition"] = 'attachment; filename="test.pdf"'
-
     return response
-
-
-def print_verification_info(verification_result):
-
-    status = verification_result.get("status", 0)
-    signers = verification_result.get("signers", [])
-
-    if status == 200:
-        for signer in signers:
-
-            for certificate in signer.get("certificates", []):
-
-                organization = certificate["subject"].get("organization", "")
-                common_name = certificate["subject"].get("commonName", "")
-                gen_time_str = signer["tsp"]["genTime"]
-                if gen_time_str:
-                    gen_time = datetime.datetime.strptime(
-                        gen_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
-                    )
-                    formatted_gen_time = (
-                        gen_time + datetime.timedelta(hours=5)
-                    ).strftime("%d.%m.%Y %H:%M")
-                    print(f"Организация: {organization}")
-                    print(f"Подписано: {common_name}")
-                    print(f"Время подписи: {formatted_gen_time}")
-                else:
-                    print("Debug: Время генерации не найдено")
-
-                print("\n")
-    else:
-        print("Статус верификации не является успешным.")
-
-
-def get_verification_result(file_id):
-    url = f"http://localhost:5000/verify?id={file_id}"
-    response = requests.get(url)
-    verification_result = response.json()
-    return verification_result
 
 
 def sign_file_gos(key, password, file):
@@ -139,27 +113,27 @@ def sign_file_gos(key, password, file):
     response = requests.post(url, data=data_json_sign, headers=headers)
     response_data = json.loads(response.text)
 
-    encoded_data = response_data["cms"]
+    if "cms" in response_data:
+        encoded_data = response_data["cms"]
+        decoded_data = base64.b64decode(encoded_data)
 
-    decoded_data = base64.b64decode(encoded_data)
+        unique_id = str(uuid4())
+        unique_filename = "decoded_file_" + str(unique_id[:10]) + ".cms"
+        decoded_file_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_filename)
 
-    unique_id = str(uuid4())
-    unique_filename = "decoded_file_" + str(unique_id[:10]) + ".cms"
-    decoded_file_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_filename)
+        with open(decoded_file_path, "wb") as f:
+            f.write(decoded_data)
 
-    with open(decoded_file_path, "wb") as f:
-        f.write(decoded_data)
+        save_to_database(os.path.basename(file), decoded_file_path)
 
-    file_id: int | None | json.Any = save_to_database(
-        os.path.basename(file), decoded_file_path
-    )
+        if os.path.exists(key):
+            os.remove(key)
+        # if os.path.exists(file):
+        # os.remove(file)
 
-    if os.path.exists(key):
-        os.remove(key)
-    if os.path.exists(file):
-        os.remove(file)
-
-    return decoded_data, file_id
+        return decoded_data, response_data.get("signers", [])
+    else:
+        raise ValueError("CMS data not found in the response")
 
 
 def get_base_64_key_string(key) -> str:
@@ -170,8 +144,37 @@ def get_base_64_key_string(key) -> str:
     return base64_key_string
 
 
+def verify_data(signers_data):
+    data_to_verify = {"signers": signers_data}
+    url = "http://localhost:5000/verify"
+    headers = {"Content-Type": "application/json"}
+    response = requests.post(url, data=json.dumps(data_to_verify), headers=headers)
+    if response.status_code == 200:
+        response_data = response.json()
+        return response_data
+    return None
+
+
+def add_table_to_pdf(pdf_file, table, file_id):
+    pdf_writer = PdfFileWriter()
+    pdf_reader = PdfFileReader(pdf_file)
+
+    for page_num in range(pdf_reader.numPages):
+        page = pdf_reader.getPage(page_num)
+        pdf_writer.addPage(page)
+
+    table_page = PdfFileReader(BytesIO(table.encode("utf-8"))).getPage(0)
+    pdf_writer.addPage(table_page)
+
+    output_pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], f"output_{file_id}.pdf")
+    with open(output_pdf_path, "wb") as output_pdf:
+        pdf_writer.write(output_pdf)
+
+    return output_pdf_path
+
+
 @app.route("/verify", methods=["GET"])
-def verify_data():
+def verify_cms():
     file_id = request.args.get("id")
     if not file_id:
         return "File ID is required", 400
