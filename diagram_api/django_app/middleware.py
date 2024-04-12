@@ -8,7 +8,7 @@ class LogAccessMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        ignored_ips = ["192.168.12.27", "192.168.11.130"]
+        ignored_ips = ["192.168.12.27", "192.168.13.89"]
 
         ip_address = request.META.get("HTTP_X_FORWARDED_FOR", "")
         ip_address = ip_address.split(",")[0].strip() if ip_address else None
