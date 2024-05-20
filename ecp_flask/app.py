@@ -1,5 +1,6 @@
 import base64
 import datetime
+import io
 import json
 import os
 from uuid import uuid4
@@ -7,8 +8,14 @@ from uuid import uuid4
 import mysql.connector
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, make_response, request
+from flask import Flask, jsonify, make_response, render_template, request
 from flask_cors import CORS
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Table
 
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(dotenv_path):
@@ -22,8 +29,10 @@ db_connection = mysql.connector.connect(
     host=os.getenv("DB_HOST"),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_NAME"),
+    database=os.getenv("DB_ECP"),
 )
+
+
 db_cursor = db_connection.cursor()
 
 db_cursor.execute(
@@ -52,6 +61,81 @@ def save_to_database(original_file_name, signed_file_path):
     return file_id
 
 
+@app.route("/test")
+def test():
+    return render_template("example.html")
+
+
+def process_pdf(returnfile, verification_info):
+    decrypted_file = io.BytesIO(returnfile)
+
+    font_name = "Montserrat-Regular"
+    font_path = "/var/www/ecp.medkrmu/KRMU-main/font/Montserrat-Regular.ttf"
+    pdfmetrics.registerFont(TTFont(font_name, font_path, "UTF-8"))
+
+    styles = getSampleStyleSheet()
+    for style_name in ["Title", "BodyText", "Normal", "Heading1"]:
+        styles[style_name].fontName = font_name
+        styles[style_name].fontSize = 10
+
+    styleN = styles["Normal"]
+    styleH = styles["Heading1"]
+
+    table_data = [
+        [
+            Paragraph("Ключ", styleH),
+            Paragraph(
+                verification_info["public_key"][0:7]
+                + "..."
+                + verification_info["public_key"][-9:],
+                styleN,
+            ),
+        ],
+        [
+            Paragraph("Организация", styleH),
+            Paragraph(verification_info.get("organization", "N/A"), styleN),
+        ],
+        [
+            Paragraph("Подписал", styleH),
+            Paragraph(verification_info.get("common_name", "N/A"), styleN),
+        ],
+        [
+            Paragraph("Время подписания", styleH),
+            Paragraph(verification_info.get("formatted_gen_time", "N/A"), styleN),
+        ],
+    ]
+
+    table_style = [
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.black),
+        ("BOX", (0, 0), (-1, -1), 0.25, colors.black),
+        ("LEADING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("COLWIDTHS", (0, 0), (0, 1), 200),
+        ("COLWIDTHS", (1, 0), (-1, -1), 300),
+        ("SPLITTABLE", (0, 0), (-1, -1), 1),
+    ]
+
+    table = Table(table_data, style=table_style, splitByRow=True, hAlign="CENTER")
+
+    doc = SimpleDocTemplate(decrypted_file, pagesize=A4)
+
+    flowables = [
+        Paragraph("Данные о подписи", styles["Title"]),
+        table,
+    ]
+
+    try:
+        doc.build(flowables)
+    except Exception as e:
+        print(f"Error generating with: {e}")
+
+    decrypted_file.seek(0)
+    return decrypted_file.read()
+
+
 @app.route("/sign", methods=["POST"])
 def sign_file():
     key_files = request.files.getlist("keyPath")
@@ -71,14 +155,17 @@ def sign_file():
 
     returnfile, file_id = sign_file_gos(key_path, password, file_path)
 
-    verification_result = get_verification_result(file_id)
+    verification_info = print_verification_info(get_verification_result(file_id))
 
-    response = make_response(returnfile)
-    print_verification_info(verification_result)
+    if verification_info is not None:
+        updated_returnfile = process_pdf(returnfile, verification_info)
 
-    response.headers["Content-Disposition"] = 'attachment; filename="test.pdf"'
-
-    return response
+        response = make_response(updated_returnfile)
+        response.headers["Content-Disposition"] = 'attachment; filename="test.pdf"'
+        response.headers["Content-Type"] = "application/pdf"
+        return response
+    else:
+        return jsonify({"message": "Incorrect SingKey Data"}), 400
 
 
 def print_verification_info(verification_result):
@@ -93,23 +180,41 @@ def print_verification_info(verification_result):
 
                 organization = certificate["subject"].get("organization", "")
                 common_name = certificate["subject"].get("commonName", "")
-                gen_time_str = signer["tsp"]["genTime"]
-                if gen_time_str:
-                    gen_time = datetime.datetime.strptime(
-                        gen_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
-                    )
-                    formatted_gen_time = (
-                        gen_time + datetime.timedelta(hours=5)
-                    ).strftime("%d.%m.%Y %H:%M")
-                    print(f"Организация: {organization}")
-                    print(f"Подписано: {common_name}")
-                    print(f"Время подписи: {formatted_gen_time}")
-                else:
-                    print("Debug: Время генерации не найдено")
+                public_key = certificate.get("publicKey", "")
 
-                print("\n")
+                if "ORGANIZATION" not in certificate.get("keyUser", []):
+                    print(
+                        "Не правильный ЭЦП ключ: Отсутствует необходимое разрешение на организацию."
+                    )
+                    return None
+
+                if organization:
+                    gen_time_str = signer["tsp"]["genTime"]
+                    if gen_time_str:
+                        gen_time = datetime.datetime.strptime(
+                            gen_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
+                        )
+                        formatted_gen_time = (
+                            gen_time + datetime.timedelta(hours=5)
+                        ).strftime("%d.%m.%Y %H:%M")
+                        print(f"Организация: {organization}")
+                        print(f"Подписано: {common_name}")
+                        print(f"Публичный ключ: {public_key[:7]}....{public_key[-9:]}")
+                        print(f"Время подписи: {formatted_gen_time}")
+                        return {
+                            "organization": organization,
+                            "common_name": common_name,
+                            "public_key": public_key,
+                            "formatted_gen_time": formatted_gen_time,
+                        }
+                else:
+                    print(
+                        "Ошибка: Отсутствует информация об организации в сертификате."
+                    )
+                    return None
     else:
         print("Статус верификации не является успешным.")
+        return None
 
 
 def get_verification_result(file_id):
@@ -156,8 +261,9 @@ def sign_file_gos(key, password, file):
 
     if os.path.exists(key):
         os.remove(key)
-    if os.path.exists(file):
-        os.remove(file)
+    #! REMOVING FILE
+    # if os.path.exists(file):
+    #     os.remove(file)
 
     return decoded_data, file_id
 

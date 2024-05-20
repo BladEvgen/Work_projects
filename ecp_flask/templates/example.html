@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Подписание файла</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <style>
+    .password-toggle {
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      top: 66%;
+      right: 10px;
+      transform: translateY(-50%);
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-900 text-white">
+  <div class="form-container max-w-2xl mx-auto mt-10 px-4 py-8 bg-gray-800 rounded-lg shadow-lg">
+    <form id="fileForm" enctype="multipart/form-data" class="flex flex-col items-center">
+      <!-- PDF Input -->
+      <div class="mb-6 w-full max-w-md">
+        <label for="fileInput" class="block text-sm text-gray-400 mb-2">PDF файл</label>
+        <label for="fileInput"
+          class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
+          <div class="flex flex-col items-center justify-center pt-5 pb-6">
+            <i class="fa fa-cloud-upload" aria-hidden="true"></i>
+
+            <p id="pdfFileName" class="mb-2 text-sm text-gray-500">
+              Click to upload or drag and drop
+            </p>
+            <p class="text-xs">PDF</p>
+          </div>
+          <input id="fileInput" type="file" class="hidden" name="file" accept=".pdf" onchange="updateFileName(this)"
+            required />
+        </label>
+      </div>
+      <!-- P12 Input -->
+      <div class="mb-6 w-full max-w-md">
+        <label for="keyPath" class="block text-sm text-gray-400 mb-2">Файл ЭЦП (.p12)</label>
+        <label for="keyPath"
+          class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 p-2 text-white">
+          <input id="keyPath" type="file" class="hidden" name="keyPath" accept=".p12" onchange="updateFileName(this)"
+            required />
+          <span id="p12FileName">Выберете файл ЭЦП</span>
+        </label>
+        <span id="p12FileName" class="w-full text-sm text-gray-400 truncate"></span>
+      </div>
+      <!-- Password Input -->
+      <div class="mb-6 w-full max-w-md password-toggle relative">
+        <label for="password" class="block text-sm font-medium mb-2">Пароль</label>
+        <input type="password" id="password"
+          class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+          placeholder="•••••••••" required />
+        <i class="toggle-password far fa-eye-slash text-gray-400"></i>
+      </div>
+      <!-- Sign Button -->
+      <div class="mb-6">
+        <button type="button" onclick="signFiles()"
+          class="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+          Подписать файлы
+        </button>
+      </div>
+    </form>
+  </div>
+  <!-- Error Alert -->
+  <div id="alertContainer"
+    class="alert-container bg-red-600 fixed top-8 left-1/2 transform -translate-x-1/2 p-4 rounded shadow-lg hidden">
+    <span
+      class="close-button text-white font-bold absolute top-2 right-4 text-lg cursor-pointer transition duration-300 hover:text-black">&times;</span>
+    <strong class="block mb-2">Ошибка:</strong>
+    <span id="alertMessage"></span>
+  </div>
+
+  <script>
+    const passwordInput = document.getElementById("password");
+    const togglePassword = document.querySelector(".toggle-password");
+
+    togglePassword.addEventListener("click", function () {
+      const type =
+        passwordInput.getAttribute("type") === "text" ? "password" : "text";
+      passwordInput.setAttribute("type", type);
+      togglePassword.classList.toggle("fa-eye-slash");
+      togglePassword.classList.toggle("fa-eye");
+    });
+
+
+
+
+    function updateFileName(input) {
+      const fileName = input.files[0].name;
+      const id = input.id === "fileInput" ? "pdfFileName" : "p12FileName";
+      const colorClass =
+        input.id === "fileInput" ? "text-white text-lg" : "text-white-500";
+      document.getElementById(
+        id
+      ).innerHTML = `<span class="${colorClass}">${fileName}</span>`;
+    }
+
+    async function signFiles() {
+      try {
+        console.log("Starting file signing process...");
+
+        const fileInput = document.getElementById("fileInput");
+        const keyPath = document.getElementById("keyPath");
+        const password = document.getElementById("password").value;
+
+        if (
+          !fileInput.files.length ||
+          !keyPath.files.length ||
+          !password.trim()
+        ) {
+          showAlert("Пожалуйста, заполните все поля формы.");
+          return;
+        }
+
+        const formData = new FormData();
+
+        if (fileInput.files[0].type !== "application/pdf") {
+          showAlert("Пожалуйста, загружайте только файлы в формате PDF.");
+          return;
+        }
+
+        formData.append("file", fileInput.files[0]);
+        formData.append("keyPath", keyPath.files[0]);
+        formData.append("password", password);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "http://91.185.12.100:5000/sign", true);
+        xhr.responseType = "blob";
+
+        xhr.onload = function () {
+          console.log("Response received...");
+          if (xhr.status === 200) {
+            const blob = new Blob([xhr.response], {
+              type: "application/octet-stream",
+            });
+            const fileName = fileInput.files[0].name.replace(
+              ".pdf",
+              "_signed.pdf"
+            );
+            const downloadLink = document.createElement("a");
+            downloadLink.href = window.URL.createObjectURL(blob);
+            downloadLink.setAttribute("download", fileName);
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            console.log("File signed and downloaded successfully.");
+          } else {
+            console.error("Failed to sign files. Status code: " + xhr.status);
+            showAlert(
+              "Ошибка подписи файлов. Пожалуйста, проверьте правильность введенных данных и повторите попытку, а также используйте ЭЦП выданный ОРГАНИЗАЦИЕЙ."
+            );
+          }
+        };
+
+        xhr.send(formData);
+      } catch (error) {
+        console.error("Error in signing files:", error);
+        showAlert(
+          "Произошла ошибка при подписи файлов. Пожалуйста, попробуйте еще раз позже."
+        );
+      }
+    }
+
+    function showAlert(message) {
+      const alertContainer = document.getElementById("alertContainer");
+      const alertMessage = document.getElementById("alertMessage");
+      alertMessage.textContent = message;
+      alertContainer.classList.remove("hidden");
+    }
+
+    document
+      .getElementById("fileForm")
+      .addEventListener("submit", function (event) {
+        event.preventDefault();
+      });
+
+    document
+      .querySelector(".close-button")
+      .addEventListener("click", function () {
+        document.getElementById("alertContainer").classList.add("hidden");
+      });
+  </script>
+</body>
+
+</html>
