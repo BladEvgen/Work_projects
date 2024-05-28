@@ -1,21 +1,22 @@
+import io
+import os
+import json
 import base64
 import datetime
-import io
-import json
-import os
 from uuid import uuid4
 
-import mysql.connector
 import requests
-from dotenv import load_dotenv
-from flask import Flask, jsonify, make_response, render_template, request
+import mysql.connector
 from flask_cors import CORS
+from dotenv import load_dotenv
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet
+from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table
+from flask import Flask, jsonify, make_response, render_template, request
 
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(dotenv_path):
@@ -24,14 +25,12 @@ if os.path.exists(dotenv_path):
 app = Flask(__name__)
 CORS(app)
 
-
 db_connection = mysql.connector.connect(
     host=os.getenv("DB_HOST"),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
     database=os.getenv("DB_ECP"),
 )
-
 
 db_cursor = db_connection.cursor()
 
@@ -47,6 +46,9 @@ db_cursor.execute(
 )
 
 app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")
+signed_folder = os.path.join(app.root_path, "signed")
+if not os.path.exists(signed_folder):
+    os.makedirs(signed_folder)
 
 
 def save_to_database(original_file_name, signed_file_path):
@@ -66,8 +68,8 @@ def test():
     return render_template("example.html")
 
 
-def process_pdf(returnfile, verification_info):
-    decrypted_file = io.BytesIO(returnfile)
+def process_pdf(original_pdf, verification_info):
+    output_pdf = io.BytesIO()
 
     font_name = "Montserrat-Regular"
     font_path = "/var/www/ecp.medkrmu/KRMU-main/font/Montserrat-Regular.ttf"
@@ -80,7 +82,7 @@ def process_pdf(returnfile, verification_info):
 
     styleN = styles["Normal"]
     styleH = styles["Heading1"]
-
+    current_time = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
     table_data = [
         [
             Paragraph("Ключ", styleH),
@@ -101,7 +103,9 @@ def process_pdf(returnfile, verification_info):
         ],
         [
             Paragraph("Время подписания", styleH),
-            Paragraph(verification_info.get("formatted_gen_time", "N/A"), styleN),
+            Paragraph(
+                verification_info.get("formatted_gen_time", current_time), styleN
+            ),
         ],
     ]
 
@@ -120,7 +124,7 @@ def process_pdf(returnfile, verification_info):
 
     table = Table(table_data, style=table_style, splitByRow=True, hAlign="CENTER")
 
-    doc = SimpleDocTemplate(decrypted_file, pagesize=A4)
+    doc = SimpleDocTemplate(output_pdf, pagesize=A4)
 
     flowables = [
         Paragraph("Данные о подписи", styles["Title"]),
@@ -132,8 +136,25 @@ def process_pdf(returnfile, verification_info):
     except Exception as e:
         print(f"Error generating with: {e}")
 
-    decrypted_file.seek(0)
-    return decrypted_file.read()
+    output_pdf.seek(0)
+    return output_pdf.read()
+
+
+def merge_pdfs(original_pdf_path, new_page_pdf):
+    output = io.BytesIO()
+    original_pdf = PdfReader(original_pdf_path)
+    new_page = PdfReader(io.BytesIO(new_page_pdf))
+
+    pdf_writer = PdfWriter()
+
+    for page in original_pdf.pages:
+        pdf_writer.add_page(page)
+
+    pdf_writer.add_page(new_page.pages[0])
+
+    pdf_writer.write(output)
+    output.seek(0)
+    return output.read()
 
 
 @app.route("/sign", methods=["POST"])
@@ -152,32 +173,53 @@ def sign_file():
     for file in files:
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+        original_filename = os.path.splitext(file.filename)[0]
 
-    returnfile, file_id = sign_file_gos(key_path, password, file_path)
+    signed_pdf, file_id = sign_file_gos(key_path, password, file_path)
 
     verification_info = print_verification_info(get_verification_result(file_id))
 
     if verification_info is not None:
-        updated_returnfile = process_pdf(returnfile, verification_info)
+        try:
+            merged_pdf_content = process_pdf(signed_pdf, verification_info)
 
-        response = make_response(updated_returnfile)
-        response.headers["Content-Disposition"] = 'attachment; filename="test.pdf"'
-        response.headers["Content-Type"] = "application/pdf"
-        return response
+            merged_pdf = merge_pdfs(file_path, merged_pdf_content)
+
+            final_signed_pdf, final_file_id = sign_file_gos(
+                key_path, password, merged_pdf
+            )
+
+            signed_filename = f"{original_filename}_signed.pdf"
+            signed_file_path = os.path.join(signed_folder, signed_filename)
+
+            with open(signed_file_path, "wb") as f:
+                f.write(final_signed_pdf)
+
+            save_to_database(os.path.basename(file_path), signed_file_path)
+
+            response = make_response(final_signed_pdf)
+            response.headers["Content-Disposition"] = (
+                f'attachment; filename="{original_filename}_merged_signed.pdf"'
+            )
+            response.headers["Content-Type"] = "application/pdf"
+            if os.path.exists(key_path):
+                os.remove(key_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            return response
+        except Exception as e:
+            return jsonify({"message": f"Error: {e}"}), 400
     else:
         return jsonify({"message": "Incorrect SingKey Data"}), 400
 
 
 def print_verification_info(verification_result):
-
     status = verification_result.get("status", 0)
     signers = verification_result.get("signers", [])
 
     if status == 200:
         for signer in signers:
-
             for certificate in signer.get("certificates", []):
-
                 organization = certificate["subject"].get("organization", "")
                 common_name = certificate["subject"].get("commonName", "")
                 public_key = certificate.get("publicKey", "")
@@ -226,13 +268,12 @@ def get_verification_result(file_id):
 
 def sign_file_gos(key, password, file):
     base64_key_string = get_base_64_key_string(key)
-    with open(file, "rb") as files:
-        file_contents = files.read()
-    encoded_key = base64.b64encode(file_contents)
-    file_contents = encoded_key.decode("utf-8")
+    encoded_file = base64.b64encode(
+        file if isinstance(file, bytes) else open(file, "rb").read()
+    ).decode("utf-8")
 
     data = {
-        "data": file_contents,
+        "data": encoded_file,
         "signers": [{"key": base64_key_string, "password": password, "keyAlias": None}],
         "withTsp": True,
         "tsaPolicy": "TSA_GOST_POLICY",
@@ -242,10 +283,13 @@ def sign_file_gos(key, password, file):
     headers = {"Content-Type": "application/json"}
     url = "http://localhost:14579/cms/sign"
     response = requests.post(url, data=data_json_sign, headers=headers)
-    response_data = json.loads(response.text)
+    response_data = response.json()
+
+    if "cms" not in response_data:
+        print(f"Error in signing service: {response_data}")
+        raise KeyError("cms key not found in response")
 
     encoded_data = response_data["cms"]
-
     decoded_data = base64.b64decode(encoded_data)
 
     unique_id = str(uuid4())
@@ -255,15 +299,10 @@ def sign_file_gos(key, password, file):
     with open(decoded_file_path, "wb") as f:
         f.write(decoded_data)
 
-    file_id: int | None | json.Any = save_to_database(
-        os.path.basename(file), decoded_file_path
+    file_id = save_to_database(
+        os.path.basename(file) if isinstance(file, str) else "processed_pdf.pdf",
+        decoded_file_path,
     )
-
-    if os.path.exists(key):
-        os.remove(key)
-    #! REMOVING FILE
-    # if os.path.exists(file):
-    #     os.remove(file)
 
     return decoded_data, file_id
 
