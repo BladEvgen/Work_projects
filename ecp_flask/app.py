@@ -1,6 +1,5 @@
 import io
 import os
-import json
 import base64
 import datetime
 import pandas as pd
@@ -19,14 +18,13 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table
 from flask import Flask, jsonify, make_response, render_template, request, send_file
 
-# TODO сделать замену оригинального сертификата на подписанный узанть путь где они хранятся и заменить signed_folder, сделать сообщение что пакет и имя отправлены на подписание и сделать ссылку на скачивание на https://certificates.medkrmu.kz/download?selected_path= имя пакета подставить
-
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 
 app = Flask(__name__)
 CORS(app)
+HOST_URL = "https://ecp.medkrmu.kz/"
 
 db_connection = mysql.connector.connect(
     host=os.getenv("DB_HOST"),
@@ -41,60 +39,81 @@ db_connection_certificate = mysql.connector.connect(
     database=os.getenv("DB_CERTIFICATES"),
 )
 
-db_cursor = db_connection.cursor()
-
-db_cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS signed_files (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        original_file_name VARCHAR(255),
-        signed_file_path VARCHAR(255),
-        sign_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-        step VARCHAR(255),
-        status_message VARCHAR(255)
-    )
-    """
-)
-
 app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")
 signed_folder = os.path.join(app.root_path, "signed")
-if not os.path.exists(signed_folder):
-    os.makedirs(signed_folder)
+os.makedirs(signed_folder, exist_ok=True)
 
 
-def save_to_database(original_file_name, signed_file_path, step, status_message):
-    sql = "INSERT INTO signed_files (original_file_name, signed_file_path, step, status_message) VALUES (%s, %s, %s, %s)"
-    val = (original_file_name, signed_file_path, step, status_message)
-    db_cursor.execute(sql, val)
-    db_connection.commit()
-
-    db_cursor.execute("SELECT LAST_INSERT_ID()")
-    file_id = db_cursor.fetchone()[0]
-
-    return file_id
-
-
-def get_packages():
-    packages = []
+def execute_query(
+    query: str, params: tuple = None, db: mysql.connector.connect = None
+) -> list:
+    cursor = db.cursor()
     try:
-        cursor = db_connection_certificate.cursor()
-        query = "SELECT package_name FROM packages ORDER BY date DESC"
-        cursor.execute(query)
+        cursor.execute(query, params)
         result = cursor.fetchall()
-        packages = [row[0] for row in result]
+        db.commit()
+        return result
     except mysql.connector.Error as err:
         print(f"Error: {err}")
-        return None
+        db.rollback()
+        return []
     finally:
         cursor.close()
-    return packages
 
 
-@app.route("/test", methods=["GET", "POST"])
-def test():
+def initialize_database():
+    create_table_query = """
+        CREATE TABLE IF NOT EXISTS signed_files (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            original_file_name VARCHAR(255),
+            signed_file_path VARCHAR(255),
+            sign_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            step VARCHAR(255),
+            status_message VARCHAR(255)
+        )
+    """
+    execute_query(create_table_query, db=db_connection)
+
+
+initialize_database()
+
+
+def change_permissions_and_ownership(
+    directory: str, uid: int = 1001, gid: int = 1001, permissions: int = 0o666
+):
+    for root, dirs, files in os.walk(directory):
+        for momo in dirs + files:
+            path = os.path.join(root, momo)
+            os.chmod(path, permissions)
+            os.chown(path, uid, gid)
+        os.chmod(root, permissions)
+        os.chown(root, uid, gid)
+
+
+def save_to_database(
+    original_file_name: str, signed_file_path: str, step: str, status_message: str
+) -> int:
+    sql = "INSERT INTO signed_files (original_file_name, signed_file_path, step, status_message) VALUES (%s, %s, %s, %s)"
+    val = (original_file_name, signed_file_path, step, status_message)
+    execute_query(sql, val, db=db_connection)
+
+    result = execute_query("SELECT LAST_INSERT_ID()", db=db_connection)
+    return result[0][0] if result else None
+
+
+def get_packages() -> list:
+    query = (
+        "SELECT package_name FROM packages WHERE signed_status = 1 ORDER BY date DESC"
+    )
+    result = execute_query(query, db=db_connection_certificate)
+    return [row[0] for row in result] if result else []
+
+
+@app.route("/ecp_sign", methods=["GET", "POST"])
+def ecp_sign_view():
     if request.method == "GET":
         packages = get_packages()
-        return render_template("example.html", packages=packages)
+        return render_template("ecp_sign.html", packages=packages)
 
 
 @app.route("/download_excel", methods=["POST"])
@@ -105,12 +124,8 @@ def download_excel():
     if not package_name:
         return jsonify({"error": "Package name is required"}), 400
 
-    cursor = db_connection_certificate.cursor(dictionary=True)
     query = "SELECT * FROM certificate WHERE package_name = %s"
-    cursor.execute(query, (package_name,))
-    results = cursor.fetchall()
-    cursor.close()
-
+    results = execute_query(query, (package_name,), db=db_connection_certificate)
     if not results:
         return jsonify({"error": "No data found for the selected package"}), 404
 
@@ -120,7 +135,6 @@ def download_excel():
         df.to_excel(writer, index=False, sheet_name="Sheet1")
 
     output.seek(0)
-
     return send_file(
         output,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -129,9 +143,8 @@ def download_excel():
     )
 
 
-def process_pdf(original_pdf, verification_info):
+def process_pdf(original_pdf: bytes, verification_info: dict) -> bytes:
     output_pdf = io.BytesIO()
-
     font_name = "Montserrat-Regular"
     font_path = "/var/www/ecp.medkrmu/KRMU-main/font/Montserrat-Regular.ttf"
     pdfmetrics.registerFont(TTFont(font_name, font_path, "UTF-8"))
@@ -184,13 +197,8 @@ def process_pdf(original_pdf, verification_info):
     ]
 
     table = Table(table_data, style=table_style, splitByRow=True, hAlign="CENTER")
-
     doc = SimpleDocTemplate(output_pdf, pagesize=A4)
-
-    flowables = [
-        Paragraph("Данные о подписи", styles["Title"]),
-        table,
-    ]
+    flowables = [Paragraph("Данные о подписи", styles["Title"]), table]
 
     try:
         doc.build(flowables)
@@ -201,21 +209,28 @@ def process_pdf(original_pdf, verification_info):
     return output_pdf.read()
 
 
-def merge_pdfs(original_pdf_path, new_page_pdf):
+def merge_pdfs(original_pdf_path: str, new_page_pdf: bytes) -> bytes:
     output = io.BytesIO()
     original_pdf = PdfReader(original_pdf_path)
     new_page = PdfReader(io.BytesIO(new_page_pdf))
 
     pdf_writer = PdfWriter()
-
     for page in original_pdf.pages:
         pdf_writer.add_page(page)
 
     pdf_writer.add_page(new_page.pages[0])
-
     pdf_writer.write(output)
     output.seek(0)
     return output.read()
+
+
+def rename_pdfs_to_old(directory):
+    for filename in os.listdir(directory):
+        if filename.endswith(".pdf"):
+            os.rename(
+                os.path.join(directory, filename),
+                os.path.join(directory, f"{filename}.old"),
+            )
 
 
 @app.route("/sign", methods=["POST"])
@@ -240,17 +255,15 @@ def sign_file():
             directory = (
                 f"/var/www/kirill/certificates.medkrmu/cert_date_base/{package}/pdf/"
             )
+            signed_folder = directory
+            os.makedirs(directory, exist_ok=True)
         else:
-            directory = "/var/www/kirill/certificates.medkrmu/cert_date_base/ecp_files_folder/pdf/"
+            directory = "/var/www/kirill/certificates.medkrmu/cert_date_base/ecp_signed_files_folder/pdf/"
+            signed_folder = directory
+            os.makedirs(directory, exist_ok=True)
 
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        for filename in os.listdir(directory):
-            if filename.endswith(".pdf"):
-                old_file_path = os.path.join(directory, filename)
-                os.rename(old_file_path, old_file_path + ".old")
-
+        # First, sign all files and collect them in a list
+        files_to_sign = []
         if package:
             for filename in os.listdir(directory):
                 if filename.endswith(".pdf"):
@@ -262,7 +275,7 @@ def sign_file():
                         get_verification_result(file_id)
                     )
 
-                    if verification_info is not None:
+                    if verification_info:
                         merged_pdf_content = process_pdf(signed_pdf, verification_info)
                         merged_pdf = merge_pdfs(file_path, merged_pdf_content)
                         final_signed_pdf, final_file_id = sign_file_gos(
@@ -270,40 +283,12 @@ def sign_file():
                         )
 
                         signed_filename = f"{original_filename}.pdf"
-                        signed_file_path = os.path.join(directory, signed_filename)
-
-                        with open(signed_file_path, "wb") as f:
-                            f.write(final_signed_pdf)
-
-                        save_to_database(
-                            os.path.basename(file_path),
-                            signed_file_path,
-                            "sign_file",
-                            "OK",
-                        )
+                        files_to_sign.append((signed_filename, final_signed_pdf))
                         successfully_signed_files.append(original_filename)
                     else:
                         if os.path.exists(key_path):
                             os.remove(key_path)
-                        return jsonify({"message": "Incorrect SingKey Data"}), 400
-
-            if os.path.exists(key_path):
-                os.remove(key_path)
-            if successfully_signed_files:
-                try:
-                    with db_connection_certificate.cursor() as cursor:
-                        placeholders = ",".join(["%s"] * len(successfully_signed_files))
-                        update_query = f"UPDATE certificate SET signed_status = 2 WHERE id IN ({placeholders})"
-                        values = tuple(successfully_signed_files)
-                        cursor.execute(update_query, values)
-                        db_connection_certificate.commit()
-                except Exception as e:
-                    print(f"Error: {e}")
-                finally:
-                    db_connection_certificate.close()
-
-            return jsonify({"message": "All files signed successfully"}), 200
-
+                        return jsonify({"message": "Incorrect SignKey Data"}), 400
         else:
             for file in files:
                 file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
@@ -315,7 +300,7 @@ def sign_file():
                     get_verification_result(file_id)
                 )
 
-                if verification_info is not None:
+                if verification_info:
                     merged_pdf_content = process_pdf(signed_pdf, verification_info)
                     merged_pdf = merge_pdfs(file_path, merged_pdf_content)
                     final_signed_pdf, final_file_id = sign_file_gos(
@@ -323,31 +308,46 @@ def sign_file():
                     )
 
                     signed_filename = f"{original_filename}.pdf"
-                    signed_file_path = os.path.join(directory, signed_filename)
-
-                    with open(signed_file_path, "wb") as f:
-                        f.write(final_signed_pdf)
-
-                    save_to_database(
-                        os.path.basename(file_path), signed_file_path, "sign_file", "OK"
-                    )
-
-                    response = make_response(final_signed_pdf)
-                    response.headers["Content-Disposition"] = (
-                        f'attachment; filename="{original_filename}_merged_signed.pdf"'
-                    )
-                    response.headers["Content-Type"] = "application/pdf"
-
-                    if os.path.exists(key_path):
-                        os.remove(key_path)
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-
-                    return response
+                    files_to_sign.append((signed_filename, final_signed_pdf))
                 else:
                     if os.path.exists(key_path):
                         os.remove(key_path)
-                    return jsonify({"message": "Incorrect SingKey Data"}), 400
+                    return jsonify({"message": "Incorrect SignKey Data"}), 400
+
+        # Rename existing .pdf files to .pdf.old
+        rename_pdfs_to_old(directory)
+
+        # Save the signed files
+        for signed_filename, final_signed_pdf in files_to_sign:
+            signed_file_path = os.path.join(signed_folder, signed_filename)
+            with open(signed_file_path, "wb") as f:
+                f.write(final_signed_pdf)
+
+            save_to_database(
+                os.path.basename(signed_file_path),
+                signed_file_path,
+                "sign_file",
+                "OK",
+            )
+
+        if os.path.exists(key_path):
+            os.remove(key_path)
+
+        if package and successfully_signed_files:
+            try:
+                with db_connection_certificate.cursor() as cursor:
+                    placeholders = ",".join(["%s"] * len(successfully_signed_files))
+                    update_query = f"UPDATE certificate SET signed_status = 2 WHERE id IN ({placeholders})"
+                    update_package = (
+                        "UPDATE packages SET signed_status = 2 WHERE package_name = %s"
+                    )
+                    cursor.execute(update_query, tuple(successfully_signed_files))
+                    cursor.execute(update_package, (package,))
+                    db_connection_certificate.commit()
+            except Exception as e:
+                print(f"Error: {e}")
+
+        return jsonify({"message": "All files signed successfully"}), 200
 
     except Exception as e:
         save_to_database(
@@ -356,7 +356,7 @@ def sign_file():
         return jsonify({"message": f"Error: {e}"}), 400
 
 
-def print_verification_info(verification_result):
+def print_verification_info(verification_result: dict) -> dict:
     status = verification_result.get("status", 0)
     signers = verification_result.get("signers", [])
 
@@ -398,14 +398,13 @@ def print_verification_info(verification_result):
         return None
 
 
-def get_verification_result(file_id):
-    url = f"http://localhost:5000/verify?id={file_id}"
+def get_verification_result(file_id: int) -> dict:
+    url = f"{HOST_URL}/verify?id={file_id}"
     response = requests.get(url)
-    verification_result = response.json()
-    return verification_result
+    return response.json()
 
 
-def sign_file_gos(key, password, file):
+def sign_file_gos(key: str, password: str, file: str) -> tuple:
     try:
         base64_key_string = get_base_64_key_string(key)
         encoded_file = base64.b64encode(
@@ -421,21 +420,16 @@ def sign_file_gos(key, password, file):
             "tsaPolicy": "TSA_GOST_POLICY",
             "detached": False,
         }
-        data_json_sign = json.dumps(data)
-        headers = {"Content-Type": "application/json"}
-        url = "http://localhost:14579/cms/sign"
-        response = requests.post(url, data=data_json_sign, headers=headers)
+        response = requests.post("http://localhost:14579/cms/sign", json=data)
         response_data = response.json()
 
         if "cms" not in response_data:
             print(f"Error in signing service: {response_data}")
             raise KeyError("cms key not found in response")
 
-        encoded_data = response_data["cms"]
-        decoded_data = base64.b64decode(encoded_data)
-
+        decoded_data = base64.b64decode(response_data["cms"])
         unique_id = str(uuid4())
-        unique_filename = "decoded_file_" + str(unique_id[:10]) + ".cms"
+        unique_filename = f"decoded_file_{unique_id[:10]}.cms"
         decoded_file_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_filename)
 
         with open(decoded_file_path, "wb") as f:
@@ -459,12 +453,10 @@ def sign_file_gos(key, password, file):
         return None, None
 
 
-def get_base_64_key_string(key) -> str:
+def get_base_64_key_string(key: str) -> str:
     with open(key, "rb") as file:
         key_contents = file.read()
-    encoded_key = base64.b64encode(key_contents)
-    base64_key_string = encoded_key.decode("utf-8")
-    return base64_key_string
+    return base64.b64encode(key_contents).decode("utf-8")
 
 
 @app.route("/verify", methods=["GET"])
@@ -473,24 +465,23 @@ def verify_data():
     if not file_id:
         return "File ID is required", 400
 
-    db_cursor.execute(
-        "SELECT signed_file_path FROM signed_files WHERE id = %s", (file_id,)
+    result = execute_query(
+        "SELECT signed_file_path FROM signed_files WHERE id = %s",
+        (file_id,),
+        db=db_connection,
     )
-    result = db_cursor.fetchone()
     if not result:
         return "File not found", 404
 
-    file_path = result[0]
-
+    file_path = result[0][0]
     with open(file_path, "rb") as f:
         data_to_verify = base64.b64encode(f.read()).decode("utf-8")
 
     url = "http://localhost:14579/cms/verify"
-    headers = {"Content-Type": "application/json"}
-    payload = {"revocationCheck": ["OCSP"], "cms": data_to_verify}
-    response = requests.post(url, data=json.dumps(payload), headers=headers)
-    response_data = response.json()
-    return jsonify(response_data)
+    response = requests.post(
+        url, json={"revocationCheck": ["OCSP"], "cms": data_to_verify}
+    )
+    return jsonify(response.json())
 
 
 if __name__ == "__main__":
