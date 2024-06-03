@@ -262,7 +262,23 @@ def sign_file():
             signed_folder = directory
             os.makedirs(directory, exist_ok=True)
 
-        # First, sign all files and collect them in a list
+        verification_info = None
+        if package:
+            for filename in os.listdir(directory):
+                if filename.endswith(".pdf"):
+                    file_path = os.path.join(directory, filename)
+                    signed_pdf, file_id = sign_file_gos(key_path, password, file_path)
+                    verification_info = print_verification_info(
+                        get_verification_result(file_id)
+                    )
+                    break
+
+        if not verification_info:
+            return (
+                jsonify({"message": "Verification info could not be retrieved."}),
+                400,
+            )
+
         files_to_sign = []
         if package:
             for filename in os.listdir(directory):
@@ -271,36 +287,7 @@ def sign_file():
                     original_filename = os.path.splitext(filename)[0]
 
                     signed_pdf, file_id = sign_file_gos(key_path, password, file_path)
-                    verification_info = print_verification_info(
-                        get_verification_result(file_id)
-                    )
 
-                    if verification_info:
-                        merged_pdf_content = process_pdf(signed_pdf, verification_info)
-                        merged_pdf = merge_pdfs(file_path, merged_pdf_content)
-                        final_signed_pdf, final_file_id = sign_file_gos(
-                            key_path, password, merged_pdf
-                        )
-
-                        signed_filename = f"{original_filename}.pdf"
-                        files_to_sign.append((signed_filename, final_signed_pdf))
-                        successfully_signed_files.append(original_filename)
-                    else:
-                        if os.path.exists(key_path):
-                            os.remove(key_path)
-                        return jsonify({"message": "Incorrect SignKey Data"}), 400
-        else:
-            for file in files:
-                file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
-                file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-                original_filename = os.path.splitext(file.filename)[0]
-
-                signed_pdf, file_id = sign_file_gos(key_path, password, file_path)
-                verification_info = print_verification_info(
-                    get_verification_result(file_id)
-                )
-
-                if verification_info:
                     merged_pdf_content = process_pdf(signed_pdf, verification_info)
                     merged_pdf = merge_pdfs(file_path, merged_pdf_content)
                     final_signed_pdf, final_file_id = sign_file_gos(
@@ -309,15 +296,26 @@ def sign_file():
 
                     signed_filename = f"{original_filename}.pdf"
                     files_to_sign.append((signed_filename, final_signed_pdf))
-                else:
-                    if os.path.exists(key_path):
-                        os.remove(key_path)
-                    return jsonify({"message": "Incorrect SignKey Data"}), 400
+                    successfully_signed_files.append(original_filename)
+        else:
+            for file in files:
+                file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
+                file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+                original_filename = os.path.splitext(file.filename)[0]
 
-        # Rename existing .pdf files to .pdf.old
+                signed_pdf, file_id = sign_file_gos(key_path, password, file_path)
+
+                merged_pdf_content = process_pdf(signed_pdf, verification_info)
+                merged_pdf = merge_pdfs(file_path, merged_pdf_content)
+                final_signed_pdf, final_file_id = sign_file_gos(
+                    key_path, password, merged_pdf
+                )
+
+                signed_filename = f"{original_filename}.pdf"
+                files_to_sign.append((signed_filename, final_signed_pdf))
+
         rename_pdfs_to_old(directory)
 
-        # Save the signed files
         for signed_filename, final_signed_pdf in files_to_sign:
             signed_file_path = os.path.join(signed_folder, signed_filename)
             with open(signed_file_path, "wb") as f:
@@ -400,8 +398,13 @@ def print_verification_info(verification_result: dict) -> dict:
 
 def get_verification_result(file_id: int) -> dict:
     url = f"{HOST_URL}/verify?id={file_id}"
-    response = requests.get(url)
-    return response.json()
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"Error making request to {url}: {e}")
+        return {"status": "error", "message": str(e)}
 
 
 def sign_file_gos(key: str, password: str, file: str) -> tuple:
