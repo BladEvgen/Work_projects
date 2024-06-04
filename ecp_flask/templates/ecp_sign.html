@@ -5,8 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Подписание файла</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="{{url_for('static',filename='dist/css/output.css')}}">
+  <link rel="stylesheet" href="{{ url_for ('static' ,filename='fontawesome/css/all.css') }}" />
   <style>
     .password-toggle {
       position: relative;
@@ -59,7 +59,7 @@
         </button>
       </div>
       <!-- PDF Input -->
-      <div class="mb-6 w-full max-w-md" id="pdfInputContainer">
+      <div class="mb-6 w-full max-w-md" id="pdfInputContainer" hidden>
         <label for="fileInput" class="block text-sm text-gray-400 mb-2">PDF файл</label>
         <label for="fileInput"
           class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
