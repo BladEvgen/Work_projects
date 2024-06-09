@@ -1,0 +1,130 @@
+{% extends "components/base.html" %}
+
+{% block title %}Queue KRMU{% endblock title %}
+
+{% block main %}
+<header class="container d-flex flex-wrap justify-content-between align-items-center py-3 mb-4 border-bottom">
+    {% if request.user.is_authenticated %}
+    <h2>Консультант: {{ consultant.user.username }} стол №{{ consultant.table_number }}</h2>
+    <div class="d-flex">
+        <a href="{% url 'logout' %}" class="btn btn-outline-danger ms-auto">Выйти</a>
+    </div>
+    {% endif %}
+</header>
+
+{% if request.user.is_authenticated %}
+<div class="container mt-5">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h3 id="current-ticket">Текущий Талон: {% if current_ticket %}
+                {{ current_ticket.number }}{% else %}----
+                {% endif %}</h3>
+        </div>
+        <div class="col-md-6 d-flex justify-content-end">
+            <button id="call-next"
+                class="btn btn-primary me-2 {% if current_ticket %}d-none{% endif %}">Вызвать</button>
+            <button id="complete-ticket"
+                class="btn btn-warning {% if not current_ticket %}d-none{% endif %}">Закончить</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
+            <ul id="waiting-tickets" class="list-group">
+                {% for ticket in tickets %}
+                <li class="list-group-item" id="ticket-{{ ticket.number }}">Талон {{ ticket.number }}</li>
+                {% empty %}
+                <li class="list-group-item">Нет талонов</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+    const consultantId = "{{ consultant.id }}";
+    const queueSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/queue/' + consultantId + '/'
+    );
+
+    queueSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        const action = data.action;
+        const ticketNumber = data.ticket_number;
+        const consultantId = data.consultant_id;
+
+        if (action === 'call_next' && consultantId == "{{ consultant.id }}") {
+            $('#current-ticket').text('Текущий Талон: ' + ticketNumber);
+            $('#complete-ticket').removeClass('d-none');
+            $('#call-next').addClass('d-none');
+        } else if (action === 'complete_ticket' && consultantId == "{{ consultant.id }}") {
+            $('#current-ticket').text('Текущий Талон: ----');
+            $('#complete-ticket').addClass('d-none');
+            $('#call-next').removeClass('d-none');
+        }
+
+        if (action === 'call_next' || action === 'complete_ticket' || action === 'new_ticket') {
+            updateQueue();
+        }
+
+        if (action === 'new_ticket') {
+            $('#waiting-tickets').append('<li class="list-group-item" id="ticket-' + ticketNumber + '">Талон ' + ticketNumber + '</li>');
+            $('#total-waiter').text(parseInt($('#total-waiter').text()) + 1);
+        }
+    };
+
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
+
+    $('#call-next').click(function () {
+        queueSocket.send(JSON.stringify({
+            'action': 'call_next'
+        }));
+    });
+
+    $('#complete-ticket').click(function () {
+        queueSocket.send(JSON.stringify({
+            'action': 'complete_ticket'
+        }));
+    });
+
+    function updateQueue() {
+        $.getJSON('{% url "queue" %}', function (data) {
+            $('#waiting-tickets').empty();
+            $('#total-waiter').text(data.tickets.length);
+            data.tickets.forEach(function (ticket) {
+                $('#waiting-tickets').append('<li class="list-group-item" id="ticket-' + ticket.number + '">Талон ' + ticket.number + '</li>');
+            });
+        });
+    }
+
+    $(document).ready(function () {
+        updateQueue();
+    });
+</script>
+
+
+{% endif %}
+{% endblock main %}

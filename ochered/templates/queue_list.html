@@ -1,0 +1,89 @@
+{% extends "components/base.html" %}
+
+{% block title %}Queue list{% endblock title %}
+
+{% block main %}
+<div class="container">
+
+    <div class="alert alert-success d-none" role="alert" id="ticket-called-alert">
+        Ticket {{ ticket.number }} has been called!
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <h2 class="h4">Подойдите</h2>
+            <ul id="in-progress-list" class="list-group">
+                {% for ticket in in_progress_tickets %}
+                <li class="list-group-item list-group-item-danger in-progress" data-ticket="{{ ticket.number }}">
+                    Заявка {{ ticket.number }} - Подойдите к столу {{ ticket.consultant.table_number }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-md-6 mb-4">
+            <h2 class="h4">На подходе</h2>
+            <ul id="waiting-list" class="list-group">
+                {% for ticket in waiting_tickets %}
+                <li class="list-group-item list-group-item-secondary waiting" data-ticket="{{ ticket.number }}">
+                    Заявка {{ ticket.number }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    const consultantId = '{{ consultant_id }}';
+    const ws = new WebSocket(`ws://${window.location.host}/ws/queue/${consultantId}/`);
+
+    ws.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        const action = data.action;
+
+        if (action === 'call_next') {
+            updateInProgress(data.ticket_number, data.table_number);
+        } else if (action === 'complete_ticket') {
+            removeInProgress(data.ticket_number);
+        } else if (action === 'new_ticket') {
+            addWaiting(data.ticket_number);
+        }
+    };
+
+    function updateInProgress(ticketNumber, tableNumber) {
+        const inProgressList = document.getElementById('in-progress-list');
+        const listItem = document.createElement('li');
+        listItem.textContent = `Заявка ${ticketNumber} - Подойдите к столу ${tableNumber}`;
+        listItem.classList.add('list-group-item', 'list-group-item-danger', 'in-progress');
+        listItem.setAttribute('data-ticket', ticketNumber);
+        inProgressList.appendChild(listItem);
+
+        removeWaiting(ticketNumber);
+    }
+
+    function removeInProgress(ticketNumber) {
+        const inProgressList = document.getElementById('in-progress-list');
+        const listItem = document.querySelector(`#in-progress-list li[data-ticket="${ticketNumber}"]`);
+        if (listItem) {
+            inProgressList.removeChild(listItem);
+        }
+    }
+
+    function addWaiting(ticketNumber) {
+        const waitingList = document.getElementById('waiting-list');
+        const listItem = document.createElement('li');
+        listItem.textContent = `Заявка ${ticketNumber}`;
+        listItem.classList.add('list-group-item', 'list-group-item-secondary', 'waiting');
+        listItem.setAttribute('data-ticket', ticketNumber);
+        waitingList.appendChild(listItem);
+    }
+
+    function removeWaiting(ticketNumber) {
+        const waitingList = document.getElementById('waiting-list');
+        const listItem = document.querySelector(`#waiting-list li[data-ticket="${ticketNumber}"]`);
+        if (listItem) {
+            waitingList.removeChild(listItem);
+        }
+    }
+</script>
+{% endblock main %}
