@@ -3,7 +3,8 @@
 {% block title %}Queue list{% endblock title %}
 
 {% block main %}
-<div class="container" style="width: 100%; max-width: 100%; max-height: 100vh; overflow: hidden; padding: 10px 20px; margin: 0; background-color: #fff;">
+<div class="container"
+    style="width: 100%; max-width: 100%; max-height: 100vh; overflow: hidden; padding: 10px 20px; margin: 0; background-color: #fff;">
 
     <div class="alert alert-success d-none" role="alert" id="ticket-called-alert">
         Ticket {{ ticket.number }} has been called!
@@ -11,7 +12,8 @@
 
     <div class="row">
         <div class="col-md-6 mb-4" style="padding: 0; flex-grow: 1;">
-            <h2 class="h4-1"><span>Үстелге келіңіз</span> | <span>Подойди к столу</span> | <span>Come to the table</span></h2>
+            <h2 class="h4-1"><span>Үстелге келіңіз</span> | <span>Подойди к столу</span> | <span>Come to the
+                    table</span></h2>
             <ul id="in-progress-list" class="list-group">
                 {% for ticket in in_progress_tickets %}
                 <li class="list-group-item list-group-item-danger in-progress" data-ticket="{{ ticket.number }}">
@@ -59,9 +61,19 @@
     function updateInProgress(ticketNumber, tableNumber) {
         const inProgressList = document.getElementById('in-progress-list');
         const listItem = document.createElement('li');
-        listItem.textContent = `№ ${ticketNumber} - Подойдите к столу ${tableNumber}`;
         listItem.classList.add('list-group-item', 'list-group-item-danger', 'in-progress');
         listItem.setAttribute('data-ticket', ticketNumber);
+
+        listItem.innerHTML = `
+        № <span>${ticketNumber}</span>
+        <div>
+            <span>Үстелге келіңіз</span>
+            <span>Подойди к столу</span>
+            <span>Come to the table</span>
+        </div>
+        № <span>${tableNumber}</span>
+    `;
+
         inProgressList.appendChild(listItem);
 
         removeWaiting(ticketNumber);
@@ -78,9 +90,11 @@
     function addWaiting(ticketNumber) {
         const waitingList = document.getElementById('waiting-list');
         const listItem = document.createElement('li');
-        listItem.textContent = `№ ${ticketNumber}`;
         listItem.classList.add('list-group-item', 'list-group-item-secondary', 'waiting');
         listItem.setAttribute('data-ticket', ticketNumber);
+
+        listItem.innerHTML = `№ <span>${ticketNumber}</span>`;
+
         waitingList.appendChild(listItem);
     }
 
@@ -92,8 +106,8 @@
         }
     }
 
-    setInterval(function() {
+    setInterval(function () {
         location.reload();
-    }, 10000);
+    }, 15000);
 </script>
 {% endblock main %}
