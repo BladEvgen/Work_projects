@@ -170,3 +170,7 @@ diagram_api/templates/line_marks.html
 diagram_api/templates/line_marks.html
 *.xlsx
 /ecp_flask/node_modules
+/ochered/staticroot/*
+/ochered/log/*
+/ochered/restart_app.sh
+/ochered/chered_uvicorn.service
