@@ -53,7 +53,7 @@
     function updateInProgress(ticketNumber, tableNumber) {
         const inProgressList = document.getElementById('in-progress-list');
         const listItem = document.createElement('li');
-        listItem.textContent = `Заявка ${ticketNumber} - Подойдите к столу ${tableNumber}`;
+        listItem.textContent = `№ ${ticketNumber} - Подойдите к столу ${tableNumber}`;
         listItem.classList.add('list-group-item', 'list-group-item-danger', 'in-progress');
         listItem.setAttribute('data-ticket', ticketNumber);
         inProgressList.appendChild(listItem);
@@ -72,7 +72,7 @@
     function addWaiting(ticketNumber) {
         const waitingList = document.getElementById('waiting-list');
         const listItem = document.createElement('li');
-        listItem.textContent = `Заявка ${ticketNumber}`;
+        listItem.textContent = `№ ${ticketNumber}`;
         listItem.classList.add('list-group-item', 'list-group-item-secondary', 'waiting');
         listItem.setAttribute('data-ticket', ticketNumber);
         waitingList.appendChild(listItem);
@@ -85,5 +85,9 @@
             waitingList.removeChild(listItem);
         }
     }
+
+    setInterval(function() {
+        location.reload();
+    }, 10000);
 </script>
 {% endblock main %}
