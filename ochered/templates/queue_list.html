@@ -3,29 +3,29 @@
 {% block title %}Queue list{% endblock title %}
 
 {% block main %}
-<div class="container">
+<div class="container" style="width: 100%; max-width: 100%; max-height: 100vh; overflow: hidden; padding: 10px 20px; margin: 0; background-color: #fff;">
 
     <div class="alert alert-success d-none" role="alert" id="ticket-called-alert">
         Ticket {{ ticket.number }} has been called!
     </div>
 
     <div class="row">
-        <div class="col-md-6 mb-4">
-            <h2 class="h4">Подойдите</h2>
+        <div class="col-md-6 mb-4" style="padding: 0; flex-grow: 1;">
+            <h2 class="h4-1">Подойдите</h2>
             <ul id="in-progress-list" class="list-group">
                 {% for ticket in in_progress_tickets %}
                 <li class="list-group-item list-group-item-danger in-progress" data-ticket="{{ ticket.number }}">
-                    Заявка {{ ticket.number }} - Подойдите к столу {{ ticket.consultant.table_number }}
+                    № <span>{{ ticket.number }}</span> - Подойдите к столу <span>{{ ticket.consultant.table_number }}</span>
                 </li>
                 {% endfor %}
             </ul>
         </div>
-        <div class="col-md-6 mb-4">
-            <h2 class="h4">На подходе</h2>
+        <div class="col-md-6 mb-4" style="padding: 0; width: fit-content;">
+            <h2 class="h4-2">На подходе</h2>
             <ul id="waiting-list" class="list-group">
                 {% for ticket in waiting_tickets %}
                 <li class="list-group-item list-group-item-secondary waiting" data-ticket="{{ ticket.number }}">
-                    Заявка {{ ticket.number }}
+                    № - <span>{{ ticket.number }}</span>
                 </li>
                 {% endfor %}
             </ul>
