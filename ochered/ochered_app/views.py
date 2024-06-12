@@ -45,13 +45,6 @@ def ticket_view(request, ticket_uuid):
     except Ticket.DoesNotExist:
         return render(request, "ticket.html", {"ticket": None})
 
-    if (
-        ticket.status == "served"
-        or ticket.status == "timeout"
-        or (timezone.now() - ticket.created_at).total_seconds() > 7200
-    ):
-        return render(request, "ticket.html", {"ticket": ticket})
-
     return render(request, "ticket.html", {"ticket": ticket})
 
 

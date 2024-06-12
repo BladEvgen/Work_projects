@@ -3,34 +3,44 @@
 {% block title %}Ticket{% endblock title %}
 
 {% block main %}
-<div class="container">
-    <div class="row justify-content-center mt-5">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <img class="card-logo" src="/static/media/Logo.svg">
-                    <h5 class="card-title">Статус Талона</h5>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center p-5">
+                    <img class="card-logo mb-4 mx-auto d-block" src="/static/media/Logo.svg" alt="Logo">
+                    <h5 class="card-title mb-4">Статус Талона</h5>
                     {% if ticket.status == 'waiting' %}
-                    <p class="alert alert-secondary">Номер вашего талона: <span class="fw-bolder">{{ ticket.number }}
-                        </span><br><span class="fw-bolder">Статус: В
-                            ожидании </span></p>
+                    <div class="alert alert-secondary alert-dismissible fade show" role="alert">
+                        <h4 class="alert-heading">Номер талона: <span class="fw-bolder">{{ticket.number}}</span>
+                        </h4>
+                        <p class="mb-0"><span class="fw-bolder">Статус: В ожидании</span></p>
+                    </div>
                     {% elif ticket.status == 'in_progress' %}
-                    <p class="alert alert-info">Номер вашего талона: <span class="fw-bolder">{{ ticket.number }}
-                        </span><br>Статус: <span class="fw-bolder"> В процессе
-                        </span>
-                    </p>
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        <h4 class="alert-heading">Номер талона: <span class="fw-bolder">{{ticket.number}}</span>
+                        </h4>
+                        <p class="mb-0">Статус: <span class="fw-bolder">В процессе</span></p>
+                    </div>
                     {% elif ticket.status == 'served' %}
-                    <p class="alert alert-success">Ваш талон более не действителен, спасибо за обращение.
-                    </p>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <h4 class="alert-heading">Ваш талон более не действителен, спасибо за обращение.</h4>
+                    </div>
                     {% elif ticket.status == 'timeout' %}
-                    <p class="alert alert-danger">Номер вашего талона истек.</p>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <h4 class="alert-heading">Номер вашего талона истек.</h4>
+                    </div>
                     {% endif %}
                     {% if ticket.status == 'served' or ticket.status == 'timeout' %}
-                    <p class="fw-bolder"> За повторным обращением Отсканируйте QR-код.</p>
+                    <div class=" fw-bolder alert alert-warning alert-dismissible fade show" role="alert">
+                        За повторным обращением отсканируйте QR-код.
+                    </div>
                     {% endif %}
-                    {%if ticket is None%}
-                    <p class="fw-bolder alert alert-danger">Данного талона не существует, отсканируйте QR-код.</p>
-                    {%endif%}
+                    {% if ticket is None %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <h4 class="alert-heading">Данного талона не существует, отсканируйте QR-код.</h4>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -39,6 +49,7 @@
 <script>
     setInterval(function () {
         location.reload();
-    }, 10000);
+    }, 15000);
 </script>
+
 {% endblock main %}
