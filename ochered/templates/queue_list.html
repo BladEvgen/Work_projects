@@ -11,21 +11,27 @@
 
     <div class="row">
         <div class="col-md-6 mb-4" style="padding: 0; flex-grow: 1;">
-            <h2 class="h4-1">Подойдите</h2>
+            <h2 class="h4-1"><span>Үстелге келіңіз</span> | <span>Подойди к столу</span> | <span>Come to the table</span></h2>
             <ul id="in-progress-list" class="list-group">
                 {% for ticket in in_progress_tickets %}
                 <li class="list-group-item list-group-item-danger in-progress" data-ticket="{{ ticket.number }}">
-                    № <span>{{ ticket.number }}</span> - Подойдите к столу <span>{{ ticket.consultant.table_number }}</span>
+                    № <span>{{ ticket.number }}</span>
+                    <div>
+                        <span>Үстелге келіңіз</span>
+                        <span>Подойди к столу</span>
+                        <span>Come to the table</span>
+                    </div>
+                    № <span>{{ ticket.consultant.table_number }}</span>
                 </li>
                 {% endfor %}
             </ul>
         </div>
         <div class="col-md-6 mb-4" style="padding: 0; width: fit-content;">
-            <h2 class="h4-2">На подходе</h2>
+            <h2 class="h4-2"><span>Кезек</span> | <span>Очередь</span> | <span>Queue</span></h2>
             <ul id="waiting-list" class="list-group">
                 {% for ticket in waiting_tickets %}
                 <li class="list-group-item list-group-item-secondary waiting" data-ticket="{{ ticket.number }}">
-                    № - <span>{{ ticket.number }}</span>
+                    № <span>{{ ticket.number }}</span>
                 </li>
                 {% endfor %}
             </ul>
