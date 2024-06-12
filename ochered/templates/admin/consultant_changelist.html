@@ -1,0 +1,55 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+{{ block.super }}
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+    .total-waiting {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 1px solid #ced4da;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 30px;
+        text-align: center;
+        font-family: 'Roboto', sans-serif;
+        color: #495057;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    }
+
+    .total-waiting h3 {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 700;
+        color: #17a2b8;
+    }
+
+    .total-waiting h3 span {
+        font-size: 32px;
+        font-weight: 900;
+        color: #c52e1d;
+    }
+
+    .total-waiting:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+        border-color: #a1a1a1;
+    }
+
+    .total-waiting::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        right: -5px;
+        bottom: -5px;
+        border-radius: 15px;
+        border: 2px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease;
+    }
+</style>
+<div class="total-waiting">
+    <h3>Всего талонов в ожидании: <span>{{ total_waiting }}</span></h3>
+</div>
+{% endblock %}
