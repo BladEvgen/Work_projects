@@ -4,10 +4,10 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Checks tickets and updates their status to timeout if they are older than 120 minutes"
+    help = "Checks tickets and updates their status to timeout if they are older than 60 minutes"
 
     def handle(self, *args, **kwargs):
-        timeout_threshold = timezone.now() - timezone.timedelta(minutes=120)
+        timeout_threshold = timezone.now() - timezone.timedelta(minutes=60)
         tickets_to_timeout = Ticket.objects.filter(
             created_at__lt=timeout_threshold, status="waiting"
         )
