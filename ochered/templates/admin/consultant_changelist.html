@@ -35,19 +35,6 @@
         background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
         border-color: #a1a1a1;
     }
-
-    .total-waiting::before {
-        content: '';
-        position: absolute;
-        top: -5px;
-        left: -5px;
-        right: -5px;
-        bottom: -5px;
-        border-radius: 15px;
-        border: 2px solid rgba(255, 255, 255, 0.6);
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-        transition: box-shadow 0.3s ease;
-    }
 </style>
 <div class="total-waiting">
     <h3>Всего талонов в ожидании: <span>{{ total_waiting }}</span></h3>
