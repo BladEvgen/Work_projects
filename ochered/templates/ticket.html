@@ -8,6 +8,7 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
+                    <img class="card-logo" src="/static/media/Logo.svg">
                     <h5 class="card-title">Статус Талона</h5>
                     {% if ticket.status == 'waiting' %}
                     <p class="alert alert-secondary">Номер вашего талона: <span class="fw-bolder">{{ ticket.number }}
@@ -15,7 +16,7 @@
                             ожидании </span></p>
                     {% elif ticket.status == 'in_progress' %}
                     <p class="alert alert-info">Номер вашего талона: <span class="fw-bolder">{{ ticket.number }}
-                        </span><br><span class="fw-bolder">Статус: В процессе
+                        </span><br>Статус: <span class="fw-bolder"> В процессе
                         </span>
                     </p>
                     {% elif ticket.status == 'served' %}

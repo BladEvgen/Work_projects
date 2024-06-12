@@ -3,33 +3,41 @@
 {% block title %}Queue KRMU{% endblock title %}
 
 {% block main %}
-<header class="container d-flex flex-wrap justify-content-between align-items-center py-3 mb-4 border-bottom">
+<header class="container d-flex flex-wrap justify-content-between align-items-center py-3 mb-4" style=" margin-top: 50px; border-radius: 4px;
+                    background-color: rgb(18, 48, 117);
+                    background: -webkit-linear-gradient(180deg, rgb(18, 48, 117), rgb(9, 32, 86));
+                    background: -moz-linear-gradient(180deg, rgb(18, 48, 117), rgb(9, 32, 86));
+                    background: linear-gradient(180deg, rgb(18, 48, 117), rgb(9, 32, 86));
+
+                    -webkit-box-shadow: 4px 4px 2px 0px rgba(18, 48, 117, 0.2);
+                    -moz-box-shadow: 4px 4px 2px 0px rgba(18, 48, 117, 0.2);
+                    box-shadow: 4px 4px 2px 0px rgba(18, 48, 117, 0.2);">
     {% if request.user.is_authenticated %}
-    <h2>Консультант: {{ consultant.user.username }} стол №{{ consultant.table_number }}</h2>
+    <h2 class="consultant-h2">Консультант: {{ consultant.user.username }} стол №{{ consultant.table_number }}</h2>
     <div class="d-flex">
-        <a href="{% url 'logout' %}" class="btn btn-outline-danger ms-auto">Выйти</a>
+        <a href="{% url 'logout' %}" class="btn btn-logout btn-outline-danger ms-auto">Выйти</a>
     </div>
     {% endif %}
 </header>
 
 {% if request.user.is_authenticated %}
 <div class="container mt-5">
-    <div class="row mb-3">
-        <div class="col-md-6">
+    <div class="row mb-3 d-flex">
+        <div class="col-md-6 currentCoupon">
             <h3 id="current-ticket">Текущий Талон: {% if current_ticket %}
                 {{ current_ticket.number }}{% else %}----
                 {% endif %}</h3>
         </div>
-        <div class="col-md-6 d-flex justify-content-end">
-            <button id="call-next"
+        <div class="col-md-6 d-flex " style="width: fit-content; padding-right: 0;">
+            <button style="border-radius: 4px;" id="call-next"
                 class="btn btn-primary me-2 {% if current_ticket %}d-none{% endif %}">Вызвать</button>
-            <button id="complete-ticket"
+            <button style="border-radius: 4px;" id="complete-ticket"
                 class="btn btn-warning {% if not current_ticket %}d-none{% endif %}">Закончить</button>
         </div>
     </div>
     <div class="row">
         <div class="col-md-12">
-            <h3>Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
+            <h3 class="waiting-h3">Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
             <ul id="waiting-tickets" class="list-group">
                 {% for ticket in tickets %}
                 <li class="list-group-item" id="ticket-{{ ticket.number }}">Талон {{ ticket.number }}</li>
