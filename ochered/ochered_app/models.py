@@ -1,5 +1,4 @@
 import uuid
-from tabnanny import verbose
 from django.db import models
 from django.dispatch import receiver
 from django.contrib.auth.models import User
@@ -9,6 +8,7 @@ from django.db.models.signals import post_save
 class Consultant(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     table_number = models.IntegerField(unique=True)
+
     class Meta:
         verbose_name = "Консультант"
         verbose_name_plural = "Консультанты"
@@ -48,9 +48,11 @@ class Ticket(models.Model):
         Consultant, on_delete=models.SET_NULL, null=True, blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         verbose_name = "Талон"
         verbose_name_plural = "Талоны"
+
     def get_status_display(self) -> str:
         for status, display in self.STATUS_CHOICES:
             if status == self.status:

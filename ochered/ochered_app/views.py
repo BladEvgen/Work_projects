@@ -1,4 +1,3 @@
-from django.utils import timezone
 from django.http import JsonResponse
 from .models import Ticket, Consultant
 from asgiref.sync import async_to_sync
