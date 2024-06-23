@@ -3,11 +3,12 @@ from .models import Ticket, Consultant
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-
 class QueueConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.consultant_id = self.scope["url_route"]["kwargs"]["consultant_id"]
-        self.room_group_name = f"queue_{self.consultant_id}"
+        self.consultant_id = self.scope["url_route"]["kwargs"].get("consultant_id")
+        self.room_group_name = (
+            f"queue_{self.consultant_id}" if self.consultant_id else "queue_updates"
+        )
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
@@ -28,49 +29,51 @@ class QueueConsumer(AsyncWebsocketConsumer):
             await self.handle_complete_ticket()
 
     async def handle_call_next(self):
-        consultant = await sync_to_async(Consultant.objects.get)(pk=self.consultant_id)
-        current_ticket = await sync_to_async(
-            Ticket.objects.filter(status="in_progress", consultant=consultant).first
-        )()
-
-        if not current_ticket:
-            next_ticket = await sync_to_async(
-                Ticket.objects.filter(status="waiting").order_by("number").first
+        if self.consultant_id:
+            consultant = await sync_to_async(Consultant.objects.get)(pk=self.consultant_id)
+            current_ticket = await sync_to_async(
+                Ticket.objects.filter(status="in_progress", consultant=consultant).first
             )()
 
-            if next_ticket:
-                next_ticket.status = "in_progress"
-                next_ticket.consultant = consultant
-                await sync_to_async(next_ticket.save)()
+            if not current_ticket:
+                next_ticket = await sync_to_async(
+                    Ticket.objects.filter(status="waiting").order_by("number").first
+                )()
+
+                if next_ticket:
+                    next_ticket.status = "in_progress"
+                    next_ticket.consultant = consultant
+                    await sync_to_async(next_ticket.save)()
+
+                    await self.channel_layer.group_send(
+                        "queue_updates",
+                        {
+                            "type": "broadcast_call_next_ticket",
+                            "ticket_number": next_ticket.number,
+                            "consultant_id": self.consultant_id,
+                            "table_number": consultant.table_number,
+                        },
+                    )
+
+    async def handle_complete_ticket(self):
+        if self.consultant_id:
+            consultant = await sync_to_async(Consultant.objects.get)(pk=self.consultant_id)
+            current_ticket = await sync_to_async(
+                Ticket.objects.filter(status="in_progress", consultant=consultant).first
+            )()
+
+            if current_ticket:
+                current_ticket.status = "served"
+                await sync_to_async(current_ticket.save)()
 
                 await self.channel_layer.group_send(
                     "queue_updates",
                     {
-                        "type": "broadcast_call_next_ticket",
-                        "ticket_number": next_ticket.number,
+                        "type": "broadcast_complete_current_ticket",
+                        "ticket_number": current_ticket.number,
                         "consultant_id": self.consultant_id,
-                        "table_number": consultant.table_number,
                     },
                 )
-
-    async def handle_complete_ticket(self):
-        consultant = await sync_to_async(Consultant.objects.get)(pk=self.consultant_id)
-        current_ticket = await sync_to_async(
-            Ticket.objects.filter(status="in_progress", consultant=consultant).first
-        )()
-
-        if current_ticket:
-            current_ticket.status = "served"
-            await sync_to_async(current_ticket.save)()
-
-            await self.channel_layer.group_send(
-                "queue_updates",
-                {
-                    "type": "broadcast_complete_current_ticket",
-                    "ticket_number": current_ticket.number,
-                    "consultant_id": self.consultant_id,
-                },
-            )
 
     async def new_ticket(self, event):
         ticket_number = event["ticket_number"]

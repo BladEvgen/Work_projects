@@ -14,20 +14,12 @@ def qr_page(request):
 def show_queue(request):
     in_progress_tickets = Ticket.objects.filter(status="in_progress")
     waiting_tickets = Ticket.objects.filter(status="waiting")
-    consultant_id = None
-
-    if request.user.is_authenticated:
-        consultant_id = request.user.consultant.id
-    else:
-        consultant_id = 1
 
     context = {
         "in_progress_tickets": in_progress_tickets,
         "waiting_tickets": waiting_tickets,
-        "consultant_id": consultant_id,
     }
     return render(request, "queue_list.html", context)
-
 
 def register_ticket(request):
     new_ticket = Ticket.objects.create()

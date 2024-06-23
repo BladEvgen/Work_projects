@@ -42,8 +42,7 @@
 </div>
 
 <script>
-    const consultantId = '{{ consultant_id }}';
-    const ws = new WebSocket(`ws://${window.location.host}/ws/queue/${consultantId}/`);
+    const ws = new WebSocket(`ws://${window.location.host}/ws/queue/`);
 
     ws.onmessage = function (event) {
         const data = JSON.parse(event.data);
@@ -106,8 +105,6 @@
         }
     }
 
-    setInterval(function () {
-        location.reload();
-    }, 15000);
+
 </script>
 {% endblock main %}
