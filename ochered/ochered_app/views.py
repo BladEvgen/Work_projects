@@ -1,4 +1,5 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from ochered_app import utils
 from .models import Ticket, Consultant
 from asgiref.sync import async_to_sync
 from django.shortcuts import render, redirect
@@ -8,7 +9,11 @@ from django.contrib.auth import authenticate, login, logout
 
 
 def qr_page(request):
-    return render(request, "qr.html", context={})
+    try:
+        utils.generate_qr_code()
+        return render(request, "qr.html", context={})
+    except Exception as e:
+        return HttpResponse(str(e))
 
 
 def show_queue(request):
@@ -20,6 +25,7 @@ def show_queue(request):
         "waiting_tickets": waiting_tickets,
     }
     return render(request, "queue_list.html", context)
+
 
 def register_ticket(request):
     new_ticket = Ticket.objects.create()

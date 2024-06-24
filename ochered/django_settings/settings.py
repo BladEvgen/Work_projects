@@ -6,10 +6,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 host_names = ["RogStrix", "MacBook-Pro.local"]
 DEBUG = True if socket.gethostname() in host_names else False
 SECRET_KEY = "django-insecure-(*b9-$e9c+a5r+_484grm#j%skt(=c1q!uuaf2b_q6)vi_=oz+"
-DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
+SERVER_DOMAIN_IP = "http://91.185.12.100:8000/"
 
 INSTALLED_APPS = [
     "daphne",
@@ -27,6 +26,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "ochered_app.middleware.LogAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -62,7 +62,10 @@ ASGI_APPLICATION = "django_settings.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
 

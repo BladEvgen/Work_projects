@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.db.models import Count, Q
-from ochered_app.models import Ticket, Consultant
+from ochered_app.models import Ticket, Consultant, AccessLog
 
 admin.site.site_header = "Панель управления"
 admin.site.index_title = "Администрирование сайта"
@@ -54,3 +54,21 @@ class ConsultantAdmin(admin.ModelAdmin):
         total_waiting = Ticket.objects.filter(status="waiting").count()
         extra_context["total_waiting"] = total_waiting
         return super().changelist_view(request, extra_context=extra_context)
+
+
+@admin.register(AccessLog)
+class AccessLogAdmin(admin.ModelAdmin):
+    list_display = ("ip", "device", "os", "browser", "route", "access_time")
+    search_fields = ("ip", "device", "os", "browser", "route")
+    ordering = ("-access_time",)
+
+    actions = ["delete_all_logs"]
+
+    def delete_all_logs(self, request, queryset):
+        AccessLog.objects.all().delete()
+        self.message_user(request, "All logs have been deleted successfully.")
+
+    delete_all_logs.short_description = "Delete all access logs"
+
+    def has_delete_permission(self, request, obj=None):
+        return obj is None or super().has_delete_permission(request, obj)

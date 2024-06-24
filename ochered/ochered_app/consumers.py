@@ -1,7 +1,9 @@
 import json
+import asyncio
 from .models import Ticket, Consultant
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+
 
 class QueueConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -15,9 +17,13 @@ class QueueConsumer(AsyncWebsocketConsumer):
 
         await self.channel_layer.group_add("queue_updates", self.channel_name)
 
+        self.ping_task = asyncio.create_task(self.send_pings())
+
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
         await self.channel_layer.group_discard("queue_updates", self.channel_name)
+
+        self.ping_task.cancel()
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -30,7 +36,9 @@ class QueueConsumer(AsyncWebsocketConsumer):
 
     async def handle_call_next(self):
         if self.consultant_id:
-            consultant = await sync_to_async(Consultant.objects.get)(pk=self.consultant_id)
+            consultant = await sync_to_async(Consultant.objects.get)(
+                pk=self.consultant_id
+            )
             current_ticket = await sync_to_async(
                 Ticket.objects.filter(status="in_progress", consultant=consultant).first
             )()
@@ -57,7 +65,9 @@ class QueueConsumer(AsyncWebsocketConsumer):
 
     async def handle_complete_ticket(self):
         if self.consultant_id:
-            consultant = await sync_to_async(Consultant.objects.get)(pk=self.consultant_id)
+            consultant = await sync_to_async(Consultant.objects.get)(
+                pk=self.consultant_id
+            )
             current_ticket = await sync_to_async(
                 Ticket.objects.filter(status="in_progress", consultant=consultant).first
             )()
@@ -113,3 +123,11 @@ class QueueConsumer(AsyncWebsocketConsumer):
                 }
             )
         )
+
+    async def send_pings(self):
+        while True:
+            try:
+                await self.send(text_data=json.dumps({"type": "ping"}))
+                await asyncio.sleep(120)
+            except asyncio.CancelledError:
+                break
