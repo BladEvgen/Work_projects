@@ -59,7 +59,7 @@ class QueueConsumer(AsyncWebsocketConsumer):
                             "type": "broadcast_call_next_ticket",
                             "ticket_number": next_ticket.number,
                             "consultant_id": self.consultant_id,
-                            "table_number": consultant.table_number,  # Добавлено поле с номером стола
+                            "table_number": consultant.table_number,
                         },
                     )
 
