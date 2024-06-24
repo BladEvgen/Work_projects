@@ -96,7 +96,7 @@ footer {
 
   -webkit-box-shadow: 0px 4px 2px 0px rgba(18, 48, 117, 0.2);
   -moz-box-shadow: 0px 4px 2px 0px rgba(18, 48, 117, 0.2);
-  box-shadow: 0px 4px 2px 0px rgba(18, 48, 117, 0.2);">
+  box-shadow: 0px 4px 2px 0px rgba(18, 48, 117, 0.2);
 }
 
 .tickeTable {
@@ -394,3 +394,5 @@ footer {
   border: none;
   background-color: #f2f4f8;
 }
+
+

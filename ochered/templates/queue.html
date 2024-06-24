@@ -4,12 +4,18 @@
 
 {% block main %}
 <section class="line">
-    {% if not consultant.user.first_name or not consultant.user.last_name %}
-    <h1 class="currentСonsultant">Консультант</h1>
-    {% else %}
-    <h1 class="currentСonsultant">Консультант: {{ consultant.user.first_name }} {{ consultant.user.last_name }}</h1>
-    {% endif %}
+    <div class="header-container">
+        {% if not consultant.user.first_name or not consultant.user.last_name %}
+        <h1 class="currentСonsultant">Консультант</h1>
+        {% else %}
+        <h1 class="currentСonsultant">Консультант: {{ consultant.user.first_name }} {{ consultant.user.last_name }}</h1>
+        {% endif %}
+        <h3 class="waiting-h3">Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
+
+    </div>
+
     <div class="tickeTable">
+
         <h2 class="tickeTable-ticket" id="current-ticket">Текущий Талон: <span>
                 {% if current_ticket %}
                 {{ current_ticket.number }}
@@ -19,7 +25,6 @@
     </div><!-- /tickeTable -->
 
     <div class="col-md-12">
-        <h3 class="waiting-h3">Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
 
         <ul id="waiting-tickets" class="list-group">
             {% for ticket in tickets %}
@@ -32,7 +37,8 @@
     {% if request.user.is_authenticated %}
     <div class="line-buttons">
         <button class="btn btn-primary {% if current_ticket %}d-none{% endif %}" id="call-next">Вызвать</button>
-        <button class="btn btn-warning {% if not current_ticket %}d-none{% endif %}" id="complete-ticket">Закончить</button>
+        <button class="btn btn-warning {% if not current_ticket %}d-none{% endif %}"
+            id="complete-ticket">Закончить</button>
         <a href="/logout/" class="btn btn-logout btn-outline-danger">Выйти</a>
     </div><!-- /line-buttons -->
     {% endif %}
