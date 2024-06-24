@@ -5,9 +5,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 host_names = ["RogStrix", "MacBook-Pro.local"]
 DEBUG = True if socket.gethostname() in host_names else False
-
 SECRET_KEY = "django-insecure-(*b9-$e9c+a5r+_484grm#j%skt(=c1q!uuaf2b_q6)vi_=oz+"
-
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
