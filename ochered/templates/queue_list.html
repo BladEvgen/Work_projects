@@ -12,7 +12,7 @@
 
     <div class="row">
         <div class="col-md-6 mb-4" style="padding: 0; flex-grow: 1;">
-            <h2 class="h4-1"><span>Үстелге келіңіз</span> | <span>Подойди к столу</span> | <span>Come to the
+            <h2 class="h4-1"><span>Үстелге келіңіз</span> | <span>Подойдите к столу</span> | <span>Come to the
                     table</span></h2>
             <ul id="in-progress-list" class="list-group">
                 {% for ticket in in_progress_tickets %}
@@ -20,7 +20,7 @@
                     № <span>{{ ticket.number }}</span>
                     <div>
                         <span>Үстелге келіңіз</span>
-                        <span>Подойди к столу</span>
+                        <span>Подойдите к столу</span>
                         <span>Come to the table</span>
                     </div>
                     № <span>{{ ticket.consultant.table_number }}</span>
@@ -67,7 +67,7 @@
         № <span>${ticketNumber}</span>
         <div>
             <span>Үстелге келіңіз</span>
-            <span>Подойди к столу</span>
+            <span>Подойдите к столу</span>
             <span>Come to the table</span>
         </div>
         № <span>${tableNumber}</span>
@@ -105,6 +105,8 @@
         }
     }
 
-
+    setInterval(function () {
+        location.reload();
+    }, 15000);
 </script>
 {% endblock main %}
