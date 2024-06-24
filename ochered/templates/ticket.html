@@ -10,36 +10,39 @@
                 <div class="card-body text-center p-5">
                     <img class="card-logo mb-4 mx-auto d-block" src="/static/media/Logo.svg" alt="Logo">
                     <h5 class="card-title mb-4">Статус Талона</h5>
-                    {% if ticket.status == 'waiting' %}
-                    <div class="alert alert-secondary alert-dismissible fade show" role="alert">
-                        <h4 class="alert-heading">Номер талона: <span class="fw-bolder">{{ticket.number}}</span>
-                        </h4>
-                        <p class="mb-0"><span class="fw-bolder">Статус: В ожидании</span></p>
-                    </div>
-                    {% elif ticket.status == 'in_progress' %}
-                    <div class="alert alert-info alert-dismissible fade show" role="alert">
-                        <h4 class="alert-heading">Номер талона: <span class="fw-bolder">{{ticket.number}}</span>
-                        </h4>
-                        <p class="mb-0">Статус: <span class="fw-bolder">В процессе</span></p>
-                    </div>
-                    {% elif ticket.status == 'served' %}
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <h4 class="alert-heading">Ваш талон более не действителен, спасибо за обращение.</h4>
-                    </div>
-                    {% elif ticket.status == 'timeout' %}
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <h4 class="alert-heading">Номер вашего талона истек.</h4>
-                    </div>
-                    {% endif %}
-                    {% if ticket.status == 'served' or ticket.status == 'timeout' %}
-                    <div class=" fw-bolder alert alert-warning alert-dismissible fade show" role="alert">
-                        За повторным обращением отсканируйте QR-код.
-                    </div>
-                    {% endif %}
-                    {% if ticket is None %}
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <h4 class="alert-heading">Данного талона не существует, отсканируйте QR-код.</h4>
-                    </div>
+
+                    {% if ticket %}
+                        <div class="alert {% if ticket.status == 'waiting' %}alert-secondary{% elif ticket.status == 'in_progress' %}alert-info{% elif ticket.status == 'served' %}alert-success{% elif ticket.status == 'timeout' %}alert-danger{% endif %}">
+                            <h4 class="alert-heading">
+                                {% if ticket.status == 'served' %}
+                                    Ваш талон больше не действителен, спасибо за обращение.
+                                {% elif ticket.status == 'timeout' %}
+                                    Номер вашего талона истек.
+                                {% else %}
+                                    Номер талона: <span class="fw-bolder">{{ ticket.number }}</span>
+                                {% endif %}
+                            </h4>
+
+                            {% if ticket.status == 'in_progress' %}
+                                <p class="mb-0">
+                                    <span class="fw-bolder">Статус: В процессе</span><br>
+                                    <span class="fw-bolder text-primary">Пройдите к столу: {{ ticket.consultant.table_number }}</span>
+                                </p>
+                            {% elif ticket.status == 'waiting' %}
+                                <p class="mb-0"><span class="fw-bolder">Статус: В ожидании</span></p>
+                            {% endif %}
+                        </div>
+
+                        {% if ticket.status == 'served' or ticket.status == 'timeout' %}
+                            <div class="alert alert-warning mt-3">
+                                <p class="fw-bolder">За повторным обращением отсканируйте QR-код.</p>
+                            </div>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <h4 class="alert-heading">Данного талона не существует, отсканируйте QR-код.</h4>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -47,9 +50,8 @@
     </div>
 </div>
 <script>
-    setInterval(function () {
-        location.reload();
-    }, 15000);
+    setTimeout(function(){
+       window.location.reload(true);
+    }, 10000);
 </script>
-
 {% endblock main %}
