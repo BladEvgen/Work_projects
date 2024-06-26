@@ -12,37 +12,40 @@
                     <h5 class="card-title mb-4">Статус Талона</h5>
 
                     {% if ticket %}
-                        <div class="alert {% if ticket.status == 'waiting' %}alert-secondary{% elif ticket.status == 'in_progress' %}alert-info{% elif ticket.status == 'served' %}alert-success{% elif ticket.status == 'timeout' %}alert-danger{% endif %}">
-                            <h4 class="alert-heading">
-                                {% if ticket.status == 'served' %}
-                                    Ваш талон больше не действителен, спасибо за обращение.
-                                {% elif ticket.status == 'timeout' %}
-                                    Номер вашего талона истек.
-                                {% else %}
-                                    Номер талона: <span class="fw-bolder">{{ ticket.number }}</span>
-                                {% endif %}
-                            </h4>
-
-                            {% if ticket.status == 'in_progress' %}
-                                <p class="mb-0">
-                                    <span class="fw-bolder">Статус: В процессе</span><br>
-                                    <span class="fw-bolder text-primary">Пройдите к столу: {{ ticket.consultant.table_number }}</span>
-                                </p>
-                            {% elif ticket.status == 'waiting' %}
-                                <p class="mb-0"><span class="fw-bolder">Статус: В ожидании</span></p>
+                    <div
+                        class="alert {% if ticket.status == 'waiting' %}alert-secondary{% elif ticket.status == 'in_progress' %}alert-info{% elif ticket.status == 'served' %}alert-success{% elif ticket.status == 'timeout' %}alert-danger{% endif %}">
+                        <h4 class="alert-heading">
+                            {% if ticket.status == 'served' %}
+                            Ваш талон больше не действителен, спасибо за обращение.
+                            {% elif ticket.status == 'timeout' %}
+                            Номер вашего талона истек.
+                            {% else %}
+                            Номер талона: <span class="fw-bolder">{{ ticket.number }}</span>
                             {% endif %}
-                        </div>
+                        </h4>
 
-                        {% if ticket.status == 'served' or ticket.status == 'timeout' %}
-                            <div class="alert alert-warning mt-3">
-                                <p class="fw-bolder">За повторным обращением отсканируйте QR-код.</p>
-                            </div>
+                        {% if ticket.status == 'in_progress' %}
+                        <p class="mb-0">
+                            <span class="fw-bolder">Статус: В процессе</span><br>
+                            <span class="fw-bolder text-primary">Пройдите к столу:
+                                {{ ticket.consultant.table_number}}
+                            </span>
+                        </p>
+                        {% elif ticket.status == 'waiting' %}
+                        <p class="mb-0"><span class="fw-bolder">Статус: В ожидании</span></p>
                         {% endif %}
+                    </div>
+
+                    {% if ticket.status == 'served' or ticket.status == 'timeout' %}
+                    <div class="alert alert-warning mt-3">
+                        <p class="fw-bolder">За повторным обращением отсканируйте QR-код.</p>
+                    </div>
+                    {% endif %}
 
                     {% else %}
-                        <div class="alert alert-danger">
-                            <h4 class="alert-heading">Данного талона не существует, отсканируйте QR-код.</h4>
-                        </div>
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading">Данного талона не существует, отсканируйте QR-код.</h4>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -50,8 +53,8 @@
     </div>
 </div>
 <script>
-    setTimeout(function(){
-       window.location.reload(true);
+    setTimeout(function () {
+        window.location.reload(true);
     }, 10000);
 </script>
 {% endblock main %}

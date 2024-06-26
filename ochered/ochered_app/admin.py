@@ -1,13 +1,13 @@
+from ochered_app import models
 from django.contrib import admin
 from django.db.models import Count, Q
-from ochered_app.models import Ticket, Consultant, AccessLog
 
 admin.site.site_header = "Панель управления"
 admin.site.index_title = "Администрирование сайта"
 admin.site.site_title = "Администрирование"
 
 
-@admin.register(Ticket)
+@admin.register(models.Ticket)
 class TicketAdmin(admin.ModelAdmin):
     list_display = ("get_user_username", "get_table_number", "status", "created_at")
     search_fields = ("consultant__user__username", "consultant__table_number", "status")
@@ -30,7 +30,7 @@ class TicketAdmin(admin.ModelAdmin):
         return qs.filter(status="in_progress")
 
 
-@admin.register(Consultant)
+@admin.register(models.Consultant)
 class ConsultantAdmin(admin.ModelAdmin):
     list_display = ("user", "table_number", "tickets_served_count")
     search_fields = ("user__username", "table_number")
@@ -51,21 +51,25 @@ class ConsultantAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        total_waiting = Ticket.objects.filter(status="waiting").count()
+        total_waiting = models.Ticket.objects.filter(status="waiting").count()
         extra_context["total_waiting"] = total_waiting
         return super().changelist_view(request, extra_context=extra_context)
 
 
-@admin.register(AccessLog)
+@admin.register(models.AccessLog)
 class AccessLogAdmin(admin.ModelAdmin):
     list_display = ("ip", "device", "os", "browser", "route", "access_time")
     search_fields = ("ip", "device", "os", "browser", "route")
     ordering = ("-access_time",)
 
+    list_filter = ("device", "os", "browser")
+
+    date_hierarchy = "access_time"
+
     actions = ["delete_all_logs"]
 
     def delete_all_logs(self, request, queryset):
-        AccessLog.objects.all().delete()
+        models.AccessLog.objects.all().delete()
         self.message_user(request, "All logs have been deleted successfully.")
 
     delete_all_logs.short_description = "Delete all access logs"

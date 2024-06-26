@@ -1,17 +1,24 @@
+import os
 import socket
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 host_names = ["RogStrix", "MacBook-Pro.local"]
 DEBUG = True if socket.gethostname() in host_names else False
-SECRET_KEY = "django-insecure-(*b9-$e9c+a5r+_484grm#j%skt(=c1q!uuaf2b_q6)vi_=oz+"
 
+DOTENV_PATH = BASE_DIR / ".env"
+if DOTENV_PATH.exists():
+    load_dotenv(DOTENV_PATH)
+    
+SECRET_KEY = os.getenv("SECRET_KEY")
+SERVER_DOMAIN_IP = os.getenv("SERVER_DOMAIN_IP") 
 
 ALLOWED_HOSTS = ["*"]
-SERVER_DOMAIN_IP = "http://91.185.12.100:8000/"
 
 INSTALLED_APPS = [
+    # Installed apps
     "daphne",
     "channels",
     "grappelli",
@@ -22,8 +29,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Installed apps
+    # App 
     "ochered_app",
+
 ]
 
 MIDDLEWARE = [

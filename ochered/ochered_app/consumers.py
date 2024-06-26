@@ -1,8 +1,10 @@
 import json
 import asyncio
-from .models import Ticket, Consultant
+
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+
+from ochered_app import models
 
 
 class QueueConsumer(AsyncWebsocketConsumer):
@@ -36,16 +38,20 @@ class QueueConsumer(AsyncWebsocketConsumer):
 
     async def handle_call_next(self):
         if self.consultant_id:
-            consultant = await sync_to_async(Consultant.objects.get)(
+            consultant = await sync_to_async(models.Consultant.objects.get)(
                 pk=self.consultant_id
             )
             current_ticket = await sync_to_async(
-                Ticket.objects.filter(status="in_progress", consultant=consultant).first
+                models.Ticket.objects.filter(
+                    status="in_progress", consultant=consultant
+                ).first
             )()
 
             if not current_ticket:
                 next_ticket = await sync_to_async(
-                    Ticket.objects.filter(status="waiting").order_by("number").first
+                    models.Ticket.objects.filter(status="waiting")
+                    .order_by("number")
+                    .first
                 )()
 
                 if next_ticket:
@@ -65,11 +71,13 @@ class QueueConsumer(AsyncWebsocketConsumer):
 
     async def handle_complete_ticket(self):
         if self.consultant_id:
-            consultant = await sync_to_async(Consultant.objects.get)(
+            consultant = await sync_to_async(models.Consultant.objects.get)(
                 pk=self.consultant_id
             )
             current_ticket = await sync_to_async(
-                Ticket.objects.filter(status="in_progress", consultant=consultant).first
+                models.Ticket.objects.filter(
+                    status="in_progress", consultant=consultant
+                ).first
             )()
 
             if current_ticket:
