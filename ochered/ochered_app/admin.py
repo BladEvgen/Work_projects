@@ -62,6 +62,10 @@ class AccessLogAdmin(admin.ModelAdmin):
     search_fields = ("ip", "device", "os", "browser", "route")
     ordering = ("-access_time",)
 
+    list_filter = ("device", "os", "browser")
+
+    date_hierarchy = "access_time"
+
     actions = ["delete_all_logs"]
 
     def delete_all_logs(self, request, queryset):

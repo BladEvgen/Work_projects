@@ -1,22 +1,29 @@
 from django.utils import timezone
 from ochered_app import models
 import httpagentparser
+import ipaddress
 
 
 class LogAccessMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
+        self.ignored_ips = ["192.168.12.27", "192.168.13.89"]
+        self.subnet = ipaddress.ip_network("172.16.16.0/20")
 
     def __call__(self, request):
-        ignored_ips = ["192.168.12.27", "192.168.13.89"]
-
         ip_address = request.META.get("HTTP_X_FORWARDED_FOR", "")
         ip_address = ip_address.split(",")[0].strip() if ip_address else None
 
-        if ip_address in ignored_ips:
+        if (
+            ip_address in self.ignored_ips
+            or ipaddress.ip_address(ip_address) in self.subnet
+        ):
             return self.get_response(request)
 
         if request.path.startswith("/admin/"):
+            return self.get_response(request)
+
+        if request.path.startswith("/ticket/"):
             return self.get_response(request)
 
         response = self.get_response(request)
