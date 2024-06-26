@@ -1,8 +1,6 @@
-import qrcode
-from PIL import Image, ImageDraw, ImageFont
-from django.conf import settings
 import os
-
+import qrcode
+from django.conf import settings
 
 def generate_qr_code():
     server_domain_ip = settings.SERVER_DOMAIN_IP
@@ -18,13 +16,6 @@ def generate_qr_code():
     qr.make(fit=True)
 
     img = qr.make_image(fill_color="black", back_color="white")
-
-    draw = ImageDraw.Draw(img)
-
-    font = ImageFont.truetype("DejaVuSans-Bold.ttf", size=20)
-
-    text = f"Referer: {server_domain_ip}/register_ticket/"
-    draw.text((10, img.size[1] - 30), text, fill="black", font=font)
 
     media_path = settings.MEDIA_ROOT
     qr_code_path = os.path.join(media_path, "qr-code.png")
