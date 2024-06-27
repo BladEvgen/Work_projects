@@ -1,7 +1,4 @@
-{% extends "components/base.html" %}
-
-{% block title %}Login{% endblock title %}
-
+{% extends "components/base.html" %} {% block title %}Login{% endblock title %}
 {% block main %}
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -15,13 +12,15 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                            <input type="text" class="form-control" id="username" name="username" required />
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
+                            <input type="password" class="form-control" id="password" name="password" required />
                         </div>
-                        <button type="submit" class="btn btn-primary btn-lg d-block mx-auto">Login</button>
+                        <button type="submit" class="btn btn-primary btn-lg d-block mx-auto">
+                            Login
+                        </button>
                     </form>
                 </div>
             </div>

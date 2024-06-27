@@ -1,11 +1,11 @@
-from django.http import JsonResponse, HttpResponse
-from ochered_app import utils
-from .models import Ticket, Consultant
 from asgiref.sync import async_to_sync
-from django.shortcuts import render, redirect
 from channels.layers import get_channel_layer
+from django.shortcuts import redirect, render
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
+
+from ochered_app import models, utils
 
 
 def qr_page(request):
@@ -17,8 +17,8 @@ def qr_page(request):
 
 
 def show_queue(request):
-    in_progress_tickets = Ticket.objects.filter(status="in_progress")
-    waiting_tickets = Ticket.objects.filter(status="waiting")
+    in_progress_tickets = models.Ticket.objects.filter(status="in_progress")
+    waiting_tickets = models.Ticket.objects.filter(status="waiting")
 
     context = {
         "in_progress_tickets": in_progress_tickets,
@@ -28,7 +28,7 @@ def show_queue(request):
 
 
 def register_ticket(request):
-    new_ticket = Ticket.objects.create()
+    new_ticket = models.Ticket.objects.create()
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         "queue_updates", {"type": "new_ticket", "ticket_number": new_ticket.number}
@@ -38,8 +38,8 @@ def register_ticket(request):
 
 def ticket_view(request, ticket_uuid):
     try:
-        ticket = Ticket.objects.get(uuid=ticket_uuid)
-    except Ticket.DoesNotExist:
+        ticket = models.Ticket.objects.get(uuid=ticket_uuid)
+    except models.Ticket.DoesNotExist:
         return render(request, "ticket.html", {"ticket": None})
 
     return render(request, "ticket.html", {"ticket": ticket})
@@ -47,9 +47,9 @@ def ticket_view(request, ticket_uuid):
 
 @login_required
 def queue(request):
-    consultant = Consultant.objects.get(user=request.user)
-    tickets = Ticket.objects.filter(status="waiting").order_by("number")
-    current_ticket = Ticket.objects.filter(
+    consultant = models.Consultant.objects.get(user=request.user)
+    tickets = models.Ticket.objects.filter(status="waiting").order_by("number")
+    current_ticket = models.Ticket.objects.filter(
         status="in_progress", consultant=consultant
     ).first()
 
@@ -59,7 +59,7 @@ def queue(request):
         return JsonResponse(
             {"tickets": tickets_data, "current_ticket": current_ticket_data}
         )
-    total_waiter = Ticket.objects.filter(status="waiting").count()
+    total_waiter = models.Ticket.objects.filter(status="waiting").count()
     return render(
         request,
         "queue.html",
@@ -74,13 +74,15 @@ def queue(request):
 
 @login_required
 def call_next(request):
-    consultant = Consultant.objects.get(user=request.user)
-    current_ticket = Ticket.objects.filter(
+    consultant = models.Consultant.objects.get(user=request.user)
+    current_ticket = models.Ticket.objects.filter(
         status="in_progress", consultant=consultant
     ).first()
 
     if not current_ticket:
-        next_ticket = Ticket.objects.filter(status="waiting").order_by("number").first()
+        next_ticket = (
+            models.Ticket.objects.filter(status="waiting").order_by("number").first()
+        )
         if next_ticket:
             next_ticket.status = "in_progress"
             next_ticket.consultant = consultant
@@ -105,8 +107,8 @@ def call_next(request):
 
 @login_required
 def complete_ticket(request):
-    consultant = Consultant.objects.get(user=request.user)
-    current_ticket = Ticket.objects.filter(
+    consultant = models.Consultant.objects.get(user=request.user)
+    current_ticket = models.Ticket.objects.filter(
         status="in_progress", consultant=consultant
     ).first()
     if current_ticket:
