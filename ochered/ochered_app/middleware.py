@@ -16,11 +16,7 @@ class LogAccessMiddleware:
         if not ip_address or ip_address in ["127.0.0.1", "::1"]:
             ip_address = "127.0.0.1"
 
-        if ip_address in self.ignored_ips or (ip_address and ipaddress.ip_address(ip_address) in self.subnet):
-            return self.get_response(request)
-
-        if request.path.startswith("/admin/") or request.path.startswith("/ticket/"):
-            return self.get_response(request)
+        request.is_from_subnet = ip_address in self.ignored_ips or (ip_address and ipaddress.ip_address(ip_address) in self.subnet)
 
         response = self.get_response(request)
 

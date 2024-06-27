@@ -1,22 +1,94 @@
 {% extends "components/base.html" %}
-
-{% block title %}Ticket{% endblock title %}
+{% load static %}
+{% block title %}Статус Талона{% endblock title %}
 
 {% block main %}
+<style>
+    .card-logo {
+        max-width: 150px;
+    }
+
+    .card-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #4A4A4A;
+    }
+
+    .alert {
+        font-size: 1.125rem;
+        font-weight: 500;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+    }
+
+    .alert-heading {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .fw-bolder {
+        font-weight: 700;
+    }
+
+    .text-primary {
+        color: #007bff !important;
+    }
+
+    .container {
+        max-width: 900px;
+    }
+
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+        }
+
+        .alert-heading {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-10 col-lg-8">
+        <div class="col-12">
             <div class="card shadow-lg border-0">
                 <div class="card-body text-center p-5">
-                    <img class="card-logo mb-4 mx-auto d-block" src="/static/media/Logo.svg" alt="Logo">
-                    <h5 class="card-title mb-4">Статус Талона</h5>
+                    <img class="card-logo mb-4 mx-auto d-block" src="{% static 'media/Logo.svg' %}" alt="Logo">
+                    <h5 class="card-title mb-4">Статус Вашего Талона</h5>
+
+                    {% if is_from_subnet %}
+                    <div class="alert alert-warning">
+                        <h4 class="alert-heading">Сделайте фотографию вашего талона, данная страница будет автоматически
+                            закрыта.</h4>
+                    </div>
+                    <script>
+                        setTimeout(function () {
+                            window.close();
+                        }, 20000);
+                    </script>
+                    {% endif %}
 
                     {% if ticket %}
-                    <div
-                        class="alert {% if ticket.status == 'waiting' %}alert-secondary{% elif ticket.status == 'in_progress' %}alert-info{% elif ticket.status == 'served' %}alert-success{% elif ticket.status == 'timeout' %}alert-danger{% endif %}">
+                    <div class="alert 
+                        {% if ticket.status == 'waiting' %}
+                            alert-secondary
+                        {% elif ticket.status == 'in_progress' %}
+                            alert-info
+                        {% elif ticket.status == 'served' %}
+                            alert-success
+                        {% elif ticket.status == 'timeout' %}
+                            alert-danger
+                        {% endif %}
+                    ">
                         <h4 class="alert-heading">
                             {% if ticket.status == 'served' %}
-                            Ваш талон больше не действителен, спасибо за обращение.
+                            Ваш талон больше не действителен. Спасибо за обращение!
                             {% elif ticket.status == 'timeout' %}
                             Номер вашего талона истек.
                             {% else %}
@@ -40,21 +112,35 @@
                     <div class="alert alert-warning mt-3">
                         <p class="fw-bolder">За повторным обращением отсканируйте QR-код.</p>
                     </div>
+                    <script>
+                        setTimeout(function () {
+                            window.close();
+                        }, 9900);
+                    </script>
                     {% endif %}
 
                     {% else %}
                     <div class="alert alert-danger">
                         <h4 class="alert-heading">Данного талона не существует, отсканируйте QR-код.</h4>
                     </div>
+                    <script>
+                        setTimeout(function () {
+                            window.close();
+                        }, 9900);
+                    </script>
                     {% endif %}
+
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+{% if not is_from_subnet %}
 <script>
     setTimeout(function () {
         window.location.reload(true);
     }, 10000);
 </script>
+{% endif %}
 {% endblock main %}

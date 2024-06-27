@@ -26,7 +26,6 @@ def show_queue(request):
     }
     return render(request, "queue_list.html", context)
 
-
 def register_ticket(request):
     new_ticket = models.Ticket.objects.create()
     channel_layer = get_channel_layer()
@@ -36,13 +35,14 @@ def register_ticket(request):
     return redirect("ticket", ticket_uuid=new_ticket.uuid)
 
 
+
 def ticket_view(request, ticket_uuid):
     try:
         ticket = models.Ticket.objects.get(uuid=ticket_uuid)
     except models.Ticket.DoesNotExist:
-        return render(request, "ticket.html", {"ticket": None})
+        return render(request, "ticket.html", {"ticket": None, "is_from_subnet": request.is_from_subnet})
 
-    return render(request, "ticket.html", {"ticket": ticket})
+    return render(request, "ticket.html", {"ticket": ticket, "is_from_subnet": request.is_from_subnet})
 
 
 @login_required
