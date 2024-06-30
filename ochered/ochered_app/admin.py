@@ -86,6 +86,15 @@ class TicketAdmin(admin.ModelAdmin):
 
     get_number.short_description = "Номер талона"
 
+    def truncate_tickets(self, request, queryset):
+        if queryset.exists():
+            message_bit = "1 объект" if queryset.count() == 1 else f"{queryset.count()} объектов"
+            self.message_user(request, f"Удалено {message_bit}.", level='success')
+            queryset.delete()
+        else:
+            self.message_user(request, "Нет объектов для удаления.", level='warning')
+
+    truncate_tickets.short_description = "Truncate все выбранные тикеты"
 @admin.register(models.Consultant)
 class ConsultantAdmin(admin.ModelAdmin):
     list_display = (
