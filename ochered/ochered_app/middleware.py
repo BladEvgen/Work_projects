@@ -6,7 +6,7 @@ from django.utils import timezone
 class LogAccessMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        self.ignored_ips = ["192.168.12.27", "192.168.13.89", "127.0.0.1"]
+        self.ignored_ips = ["192.168.12.27", "192.168.13.89", "127.0.0.1", "91.231.66.227"]
         self.subnet = ipaddress.ip_network("172.16.16.0/20")
 
     def __call__(self, request):
