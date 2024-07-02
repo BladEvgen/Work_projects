@@ -194,66 +194,6 @@ footer {
   border-radius: 5px;
 }
 
-.btn-logout {
-  
-}
-
-/*.consultant-h2 {
-  color: #fff;
-  font-size: 22px;
-  margin: 0;
-}
-
-.btn-logout {
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 4px;
-  border-color: #fff;
-  background-color: #fff;
-}
-
-.currentCoupon {
-  display: flex;
-  align-items: center;
-  flex-grow: 1;
-  border-radius: 4px;
-  background-color: #ccd2de;
-}
-
-.currentCoupon h3 {
-  color: #061843;
-  font-size: 20px;
-  font-weight: 600;
-
-  margin: 0;
-}
-
-.waiting-h3 {
-  color: #061843;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-
-  margin: 0;
-  padding: 10px;
-  border-radius: 5px 5px 0 0;
-  background-color: #ccd2de;
-}
-
-#waiting-tickets {
-  margin-bottom: 50px;
-}
-
-#waiting-tickets li {
-  font-size: 16px;
-  font-weight: 500;
-  border-color: #ccd2de;
-}
-
-#waiting-tickets li:first-child {
-  border-radius: 0;
-}*/
-
 .h4-1 {
   display: flex;
   grid-gap: 20px;

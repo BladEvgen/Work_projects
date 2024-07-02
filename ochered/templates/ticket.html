@@ -15,14 +15,14 @@
     }
 
     .alert {
-        font-size: 1.125rem;
+        font-size: 1rem;
         font-weight: 500;
         padding: 1.5rem;
         border-radius: 0.75rem;
     }
 
     .alert-heading {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 700;
         margin-bottom: 0.75rem;
     }
@@ -36,7 +36,44 @@
     }
 
     .container {
-        max-width: 900px;
+        max-width: 1400px;
+        width: 100%;
+        padding: 0 15px;
+        margin: auto;
+    }
+
+    .alert-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .alert-container .alert {
+        flex: 1;
+        margin: 10px;
+        text-align: center;
+        min-width: 300px;
+    }
+
+    .full-width-btn {
+        display: block;
+        width: 100%;
+        height: 50px;
+        margin-top: 20px;
+        background-color: #dc3545;
+        border: none;
+        border-radius: 30px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        color: white;
+        font-size: 1rem;
+        text-align: center;
+        line-height: 50px;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .full-width-btn:hover {
+        background-color: #c82333;
     }
 
     @media (max-width: 768px) {
@@ -51,26 +88,47 @@
         .alert-heading {
             font-size: 1.25rem;
         }
+
+        .alert-container {
+            flex-direction: column;
+        }
+
+        .alert-container .alert {
+            margin: 10px 0;
+            flex: 1 1 100%;
+        }
     }
 </style>
 
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-12">
-            <div class="card shadow-lg border-0">
-                <div class="card-body text-center p-5">
+            <div class="card shadow-lg border-0" style="max-width: 1400px; margin: auto;">
+                <div class="card-body text-center p-5" style="max-width: 1400px; margin: auto;">
                     <img class="card-logo mb-4 mx-auto d-block" src="{% static 'media/Logo.svg' %}" alt="Logo">
                     <h5 class="card-title mb-4">Статус Вашего Талона</h5>
 
                     {% if is_from_subnet %}
-                    <div class="alert alert-warning">
-                        <h4 class="alert-heading">Сделайте фотографию вашего талона, данная страница будет автоматически
-                            закрыта.</h4>
+
+                    <div class="alert-container">
+                        <div class="alert alert-warning">
+                            <h4 class="alert-heading">Купоныңызды суретке түсіріңіз, бұл бет автоматты түрде жабылады.
+                            </h4>
+                        </div>
+                        <div class="alert alert-warning">
+                            <h4 class="alert-heading">Сделайте фотографию вашего талона, данная страница будет
+                                автоматически закрыта.</h4>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h4 class="alert-heading">Take a photo of your ticket, this page will automatically close.
+                            </h4>
+                        </div>
                     </div>
                     <script>
                         setTimeout(function () {
                             window.close();
-                        }, 20000);
+                        }, 200000);
                     </script>
                     {% endif %}
 
@@ -99,9 +157,8 @@
                         {% if ticket.status == 'in_progress' %}
                         <p class="mb-0">
                             <span class="fw-bolder">Статус: В процессе</span><br>
-                            <span class="fw-bolder text-primary">Пройдите к столу:
-                                {{ ticket.consultant.table_number}}
-                            </span>
+                            <span class="fw-bolder text-primary">Пройдите к столу: {{
+                                ticket.consultant.table_number}}</span>
                         </p>
                         {% elif ticket.status == 'waiting' %}
                         <p class="mb-0"><span class="fw-bolder">Статус: В ожидании</span></p>
@@ -124,10 +181,24 @@
                         <h4 class="alert-heading">Данного талона не существует, отсканируйте QR-код.</h4>
                     </div>
                     <script>
+
                         setTimeout(function () {
                             window.close();
                         }, 9900);
                     </script>
+                    {% endif %}
+
+                    {% if is_from_subnet and not ticket.status == 'served' and not ticket.status == 'timeout' %}
+                    <script>
+                        function closewindow() {
+                            window.close()
+                        }
+                    </script>
+                    <button onclick="closewindow()" class="full-width-btn">
+                        <span class="fw-bolder p-2">
+                            Кезекке қайта қосылыңыз / Повторно занять очередь / Re-join the queue
+                        </span>
+                    </button>
                     {% endif %}
 
                 </div>
@@ -136,7 +207,7 @@
     </div>
 </div>
 
-{% if not is_from_subnet %}
+{% if not is_from_subnet and not ticket.status == 'served' and not ticket.status == 'timeout' %}
 <script>
     setTimeout(function () {
         window.location.reload(true);

@@ -10,9 +10,18 @@
         text-align: center;
     }
 
-    .qr-container h1 {
-        font-size: 2rem;
+    .text-container {
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         margin-bottom: 2rem;
+    }
+
+    .text-container h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #343a40;
+        font-weight: 700;
     }
 
     .qr-container img {
@@ -44,10 +53,15 @@
 </style>
 
 <div class="container qr-container">
-    <h1>Отсканируйте QR или нажмите кнопку чтобы занять очередь</h1>
+    <div class="text-container alert alert-warning">
+        <h2>QR сканерін сканерлеңіз немесе кезекке тұру үшін түймені басыңыз</h2>
+        <h2>Отсканируйте QR или нажмите кнопку чтобы занять очередь</h2>
+        <h2>Scan the QR or click the button to get in line</h2>
+    </div>
     <img src="{% static 'media/qr-code.png' %}" alt="QR Code" class="img-fluid">
-    <a href="{% url 'register_ticket' %}" class="full-width-btn" target="_blank"><span class="fw-bolder p-2">Занять
-            очередь</span></a>
+    <a href="{% url 'register_ticket' %}" class="full-width-btn" target="_blank">
+        <span class="fw-bolder p-2">Бұрылыс жасаңыз / Занять очередь / Take a place in line</span>
+    </a>
 </div>
 
 {% endblock main %}
