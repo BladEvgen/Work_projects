@@ -125,7 +125,6 @@
                     </div>
                     <script>
                         setTimeout(function () {
-                            window.open('', '_self', '');
                             window.close();
                         }, 30000);
                     </script>
@@ -171,7 +170,15 @@
 
                     <script>
                         setTimeout(function () {
-                            window.close();
+                            try {
+                                window.open('', '_self', '');
+                                window.close();
+                                if (!window.closed) {
+                                    window.location.href = 'about:blank';
+                                }
+                            } catch (e) {
+                                window.location.href = 'about:blank';
+                            }
                         }, 9900);
                     </script>
                     {% endif %}
@@ -182,8 +189,15 @@
                     </div>
                     <script>
                         setTimeout(function () {
-                            window.open('', '_self', '');
-                            window.close();
+                            try {
+                                window.open('', '_self', '');
+                                window.close();
+                                if (!window.closed) {
+                                    window.location.href = 'about:blank';
+                                }
+                            } catch (e) {
+                                window.location.href = 'about:blank';
+                            }
                         }, 9900);
                     </script>
                     {% endif %}
@@ -193,6 +207,9 @@
                         function closewindow() {
                             window.open('', '_self', '');
                             window.close();
+                            if (!window.closed) {
+                                window.location.href = 'about:blank';
+                            }
                         }
                     </script>
                     <button onclick="closewindow()" class="full-width-btn">
