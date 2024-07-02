@@ -125,15 +125,8 @@
                     </div>
                     <script>
                         setTimeout(function () {
-                            try {
-                                window.open('', '_self', '');
-                                window.close();
-                                if (!window.closed) {
-                                    window.location.href = 'about:blank';
-                                }
-                            } catch (e) {
-                                alert('The page could not be closed automatically. Please close it manually.');
-                            }
+                            window.open('', '_self', '');
+                            window.close();
                         }, 30000);
                     </script>
                     {% endif %}
@@ -178,15 +171,7 @@
 
                     <script>
                         setTimeout(function () {
-                            try {
-                                window.open('', '_self', '');
-                                window.close();
-                                if (!window.closed) {
-                                    window.location.href = 'about:blank';
-                                }
-                            } catch (e) {
-                                alert('The page could not be closed automatically. Please close it manually.');
-                            }
+                            window.close();
                         }, 9900);
                     </script>
                     {% endif %}
@@ -197,15 +182,8 @@
                     </div>
                     <script>
                         setTimeout(function () {
-                            try {
-                                window.open('', '_self', '');
-                                window.close();
-                                if (!window.closed) {
-                                    window.location.href = 'about:blank';
-                                }
-                            } catch (e) {
-                                alert('The page could not be closed automatically. Please close it manually.');
-                            }
+                            window.open('', '_self', '');
+                            window.close();
                         }, 9900);
                     </script>
                     {% endif %}
@@ -215,9 +193,6 @@
                         function closewindow() {
                             window.open('', '_self', '');
                             window.close();
-                            if (!window.closed) {
-                                window.location.href = 'about:blank';
-                            }
                         }
                     </script>
                     <button onclick="closewindow()" class="full-width-btn">
