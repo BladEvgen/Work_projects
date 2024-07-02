@@ -8,15 +8,16 @@ admin.site.site_header = "Панель управления"
 admin.site.index_title = "Администрирование сайта"
 admin.site.site_title = "Администрирование"
 
+
 def humanize_time(seconds):
     intervals = (
-        ('год', 'года', 'лет', 31536000),
-        ('месяц', 'месяца', 'месяцев', 2592000),
-        ('неделя', 'недели', 'недель', 604800),
-        ('день', 'дня', 'дней', 86400),
-        ('час', 'часа', 'часов', 3600),
-        ('минута', 'минуты', 'минут', 60),
-        ('секунда', 'секунды', 'секунд', 1),
+        ("год", "года", "лет", 31536000),
+        ("месяц", "месяца", "месяцев", 2592000),
+        ("неделя", "недели", "недель", 604800),
+        ("день", "дня", "дней", 86400),
+        ("час", "часа", "часов", 3600),
+        ("минута", "минуты", "минут", 60),
+        ("секунда", "секунды", "секунд", 1),
     )
     result = []
 
@@ -32,7 +33,8 @@ def humanize_time(seconds):
                 name = many
             result.append(f"{value} {name}")
 
-    return ', '.join(result)
+    return ", ".join(result)
+
 
 @admin.register(models.Ticket)
 class TicketAdmin(admin.ModelAdmin):
@@ -48,6 +50,7 @@ class TicketAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     ordering = ("-created_at", "status")
     list_filter = ("consultant",)
+    change_list_template = "admin/ticket_truncate.html"
 
     def get_user_username(self, obj):
         return obj.consultant.user.username if obj.consultant else None
@@ -61,7 +64,7 @@ class TicketAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        return queryset.exclude(status="waiting")
+        return queryset.exclude(status="test")
 
     def time_spent(self, obj):
         if obj.in_progress_at and obj.served_at:
@@ -86,15 +89,7 @@ class TicketAdmin(admin.ModelAdmin):
 
     get_number.short_description = "Номер талона"
 
-    def truncate_tickets(self, request, queryset):
-        if queryset.exists():
-            message_bit = "1 объект" if queryset.count() == 1 else f"{queryset.count()} объектов"
-            self.message_user(request, f"Удалено {message_bit}.", level='success')
-            queryset.delete()
-        else:
-            self.message_user(request, "Нет объектов для удаления.", level='warning')
 
-    truncate_tickets.short_description = "Truncate все выбранные тикеты"
 @admin.register(models.Consultant)
 class ConsultantAdmin(admin.ModelAdmin):
     list_display = (
@@ -162,6 +157,7 @@ class ConsultantAdmin(admin.ModelAdmin):
         total_waiting = models.Ticket.objects.filter(status="waiting").count()
         extra_context["total_waiting"] = total_waiting
         return super().changelist_view(request, extra_context=extra_context)
+
 
 @admin.register(models.AccessLog)
 class AccessLogAdmin(admin.ModelAdmin):
