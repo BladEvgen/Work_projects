@@ -14,6 +14,12 @@ urlpatterns = [
     path("complete_ticket/", views.complete_ticket, name="complete_ticket"),
     path("show_queue/", views.show_queue, name="show_queue"),
     path("ticket/<uuid:ticket_uuid>/", views.ticket_view, name="ticket"),
+    path(
+        "api/consultant-statistics/",
+        views.ConsultantStatisticsView.as_view(),
+        name="consultant-statistics",
+    ),
+    path("statistics_show/", views.statistic_show, name="statistic")
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

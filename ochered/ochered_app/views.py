@@ -1,21 +1,38 @@
+import datetime
+
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from django.shortcuts import redirect, render
-from django.http import HttpResponse, JsonResponse
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.db.models import (
+    Avg,
+    Count,
+    DurationField,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    Min,
+    Q,
+)
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
+from django.utils import timezone
+from django.views import View
 
-from ochered_app import models, utils
+from ochered_app import models
 
 
 def qr_page(request):
     try:
-        # utils.generate_qr_code()
-        # models.Ticket.objects.all().delete()
         return render(request, "qr.html", context={})
     except Exception as e:
         return HttpResponse(str(e))
 
+@login_required
+def statistic_show(request):
+    if not request.user.is_staff:
+        return redirect("queue")
+    return render(request, "statistic_chart.html", context={})
 
 def show_queue(request):
     in_progress_tickets = models.Ticket.objects.filter(status="in_progress")
@@ -152,3 +169,63 @@ def login_view(request):
             login(request, user)
             return redirect("queue")
     return render(request, "login.html", context={})
+
+def get_consultant_statistics():
+    today = timezone.localtime(timezone.now())
+    
+    start_of_day = datetime.datetime(today.year, today.month, today.day, tzinfo=today.tzinfo)
+    end_of_day = start_of_day + datetime.timedelta(days=1) - datetime.timedelta(microseconds=1)
+
+    start_of_week = start_of_day - datetime.timedelta(days=today.weekday())
+    end_of_week = start_of_week + datetime.timedelta(days=7) - datetime.timedelta(microseconds=1)
+
+    start_of_month = datetime.datetime(today.year, today.month, 1, tzinfo=today.tzinfo)
+    if today.month == 12:
+        start_of_next_month = datetime.datetime(today.year + 1, 1, 1, tzinfo=today.tzinfo)
+    else:
+        start_of_next_month = datetime.datetime(today.year, today.month + 1, 1, tzinfo=today.tzinfo)
+    end_of_month = start_of_next_month - datetime.timedelta(microseconds=1)
+
+    tickets = (
+        models.Ticket.objects.filter(status=models.Ticket.STATUS_SERVED)
+        .exclude(consultant__user__username="evgen")
+        .annotate(
+            service_time=ExpressionWrapper(
+                F("served_at") - F("in_progress_at"), output_field=DurationField()
+            )
+        )
+    )
+
+    min_served_at = tickets.aggregate(min_served_at=Min("served_at"))["min_served_at"]
+    days_since_start = (today - min_served_at).days if min_served_at else 1
+
+    statistics = (
+        tickets.values("consultant__user__first_name", "consultant__user__last_name")
+        .annotate(
+            avg_service_time=Avg("service_time"),
+            tickets_served_today=Count("number", filter=Q(served_at__gte=start_of_day, served_at__lte=end_of_day)),
+            tickets_served_week=Count("number", filter=Q(served_at__gte=start_of_week, served_at__lte=end_of_week)),
+            tickets_served_month=Count("number", filter=Q(served_at__gte=start_of_month, served_at__lte=end_of_month)),
+            tickets_per_day=ExpressionWrapper(
+                Count("number") / days_since_start, output_field=FloatField()
+            ),
+        )
+        .order_by("consultant__user__last_name", "consultant__user__first_name")
+    )
+
+    statistics_list = list(statistics)
+    for stat in statistics_list:
+        avg_service_time = stat["avg_service_time"]
+        if avg_service_time is not None:
+            stat["avg_service_time"] = avg_service_time.total_seconds()
+        else:
+            stat["avg_service_time"] = 0
+
+        if stat["tickets_per_day"] is None:
+            del stat["tickets_per_day"]
+
+    return statistics_list
+class ConsultantStatisticsView(View):
+    def get(self, request):
+        data = get_consultant_statistics()
+        return JsonResponse(data, safe=False)

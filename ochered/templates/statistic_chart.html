@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/statisticCSS.css' %}" />
+    <title>{% block title %}Статистика консультантов{% endblock %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="chart-container">
+        <canvas id="consultantChart"></canvas>
+    </div>
+    <script src="{% static 'js/chartDraw.js' %}"></script>
+</body>
+
+</html>

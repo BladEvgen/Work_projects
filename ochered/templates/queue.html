@@ -3,15 +3,38 @@
 {% block title %}Queue KRMU{% endblock %}
 
 {% block main %}
+<style>
+    .btn-statistics {
+        font-size: 20px;
+        font-weight: 600;
+        padding: 8px 20px;
+        border-radius: 25px;
+        color: #fff;
+        background-color: #6c757d;
+        background-image: linear-gradient(180deg, #6c757d, #5a6268);
+        border: 1px solid #6c757d;
+        transition: all 0.3s ease;
+    }
+
+    .btn-statistics:hover {
+        color: #fff;
+        background-color: #343a40;
+        background-image: linear-gradient(180deg, #343a40, #1d2124);
+        border-color: #343a40;
+    }
+</style>
 <section class="line">
     <div class="header-container">
-        {% if not consultant.user.first_name or not consultant.user.last_name %}
-        <h1 class="currentСonsultant">Консультант</h1>
-        {% else %}
-        <h1 class="currentСonsultant">Консультант: {{ consultant.user.last_name }} {{ consultant.user.first_name }}</h1>
-        {% endif %}
-        <h3 class="waiting-h3">Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
+        <div class="consultant-info">
+            {% if not consultant.user.first_name or not consultant.user.last_name %}
+            <h1 class="currentСonsultant">Консультант</h1>
+            {% else %}
+            <h1 class="currentСonsultant">Консультант: {{ consultant.user.last_name }} {{ consultant.user.first_name }}
 
+            </h1>
+            {% endif %}
+        </div>
+        <h3 class="waiting-h3">Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
     </div>
 
     <div class="tickeTable">
@@ -38,6 +61,9 @@
     {% if request.user.is_authenticated %}
     <div class="line-buttons">
         <button class="btn btn-primary {% if current_ticket %}d-none{% endif %}" id="call-next">Вызвать</button>
+        {% if request.user.is_staff %}
+        <a href="{% url 'statistic' %}" class="btn btn-statistics ml-2">Статистика</a>
+        {% endif %}
         <button class="btn btn-warning {% if not current_ticket %}d-none{% endif %}"
             id="complete-ticket">Закончить</button>
         <a href="/logout/" class="btn btn-logout btn-outline-danger">Выйти</a>

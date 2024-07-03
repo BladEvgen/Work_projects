@@ -1,7 +1,9 @@
 import ipaddress
+
 import httpagentparser
-from ochered_app import models
 from django.utils import timezone
+
+from ochered_app import models
 
 
 class LogAccessMiddleware:

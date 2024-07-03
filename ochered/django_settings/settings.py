@@ -1,20 +1,20 @@
 import os
 import socket
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 host_names = ["RogStrix", "MacBook-Pro.local"]
 DEBUG = True if socket.gethostname() in host_names else False
-
-
+DEBUG = True
 DOTENV_PATH = BASE_DIR / ".env"
 if DOTENV_PATH.exists():
     load_dotenv(DOTENV_PATH)
-    
+
 SECRET_KEY = os.getenv("SECRET_KEY")
-SERVER_DOMAIN_IP = os.getenv("SERVER_DOMAIN_IP") 
+SERVER_DOMAIN_IP = os.getenv("SERVER_DOMAIN_IP")
 
 ALLOWED_HOSTS = ["*"]
 
@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "daphne",
     "channels",
     "grappelli",
+    "corsheaders",
     # Stadnart
     "django.contrib.admin",
     "django.contrib.auth",
@@ -30,15 +31,17 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # App 
+    # App
     "ochered_app",
-
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 MIDDLEWARE = [
     "ochered_app.middleware.LogAccessMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",

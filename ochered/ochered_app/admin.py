@@ -50,7 +50,6 @@ class TicketAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     ordering = ("-created_at", "status")
     list_filter = ("consultant",)
-    change_list_template = "admin/ticket_truncate.html"
 
     def get_user_username(self, obj):
         return obj.consultant.user.username if obj.consultant else None
