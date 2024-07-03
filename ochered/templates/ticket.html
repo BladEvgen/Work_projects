@@ -1,235 +1,127 @@
-{% extends "components/base.html" %}
+<!DOCTYPE html>
+<html>
 {% load static %}
-{% block title %}Статус Талона{% endblock title %}
 
-{% block main %}
-<style>
-    .card-logo {
-        max-width: 150px;
-    }
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="{% static 'css/ticketCSS.css' %}" />
+	<title>{% block title %}Талон{% endblock %}</title>
 
-    .card-title {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: #4A4A4A;
-    }
+</head>
 
-    .alert {
-        font-size: 1rem;
-        font-weight: 500;
-        padding: 1.5rem;
-        border-radius: 0.75rem;
-    }
+<body>
+	<div class="ticketWindow">
+		{% if is_from_subnet %}
+		<div class="warning">
+			<p>Купоныңызды суретке түсіріңіз,<br>бұл бет автоматты түрде жабылады.</p>
 
-    .alert-heading {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin-bottom: 0.75rem;
-    }
+			<p>Сделайте фотографию вашего талона,<br>данная страница будет автоматически<br>закрыта.</p>
 
-    .fw-bolder {
-        font-weight: 700;
-    }
+			<p>Take a photo of your ticket,<br>this page will automatically close.</p>
 
-    .text-primary {
-        color: #007bff !important;
-    }
+			<div class="timer-container">
+				<svg width="100" height="100" class="circle">
+					<circle class="circle-bg" cx="50" cy="50" r="40"></circle>
+					<circle class="circle-fg" cx="50" cy="50" r="40"></circle>
+				</svg><!-- /circle -->
+				<div class="timer"><span id="time">30</span></div>
+			</div><!-- /timer-container -->
 
-    .container {
-        max-width: 1400px;
-        width: 100%;
-        padding: 0 15px;
-        margin: auto;
-    }
+			<script>
+				function closewindow() {
+					window.open('', '_self', '');
+					window.close();
+					if (!window.closed) {
+						window.location.href = 'about:blank';
+					}
+				}
+				function startTimer(duration, display, circle) {
+					var timer = duration, seconds;
+					var totalLength = 251.2; // Circumference of the circle
+					var interval = setInterval(function () {
+						seconds = parseInt(timer % 60, 10);
 
-    .alert-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+						seconds = seconds < 10 ? "0" + seconds : seconds;
 
-    .alert-container .alert {
-        flex: 1;
-        margin: 10px;
-        text-align: center;
-        min-width: 300px;
-    }
+						display.textContent = seconds;
 
-    .full-width-btn {
-        display: block;
-        width: 100%;
-        height: 50px;
-        margin-top: 20px;
-        background-color: #dc3545;
-        border: none;
-        border-radius: 30px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        color: white;
-        font-size: 1rem;
-        text-align: center;
-        line-height: 50px;
-        text-decoration: none;
-        transition: background-color 0.3s ease;
-    }
+						var progress = totalLength * (1 - (timer / duration));
+						circle.style.strokeDashoffset = progress;
 
-    .full-width-btn:hover {
-        background-color: #c82333;
-    }
+						if (--timer < 0) {
+							clearInterval(interval);
+							window.close();
+						}
+					}, 1000);
+				}
 
-    @media (max-width: 768px) {
-        .card-body {
-            padding: 1.5rem;
-        }
+				window.onload = function () {
+					var duration = 30; // таймер на 30 секунд
+					var display = document.querySelector('#time');
+					var circle = document.querySelector('.circle-fg');
+					circle.style.strokeDasharray = 251.2; // Set the dash array to the total length of the circle
+					circle.style.strokeDashoffset = 0; // Start with the circle fully filled
+					startTimer(duration, display, circle);
+				};
+			</script>
 
-        .card-title {
-            font-size: 1.5rem;
-        }
+		</div><!-- /warning -->
+		{% endif %}
+		<div class="ticketArea">
+			<div class="ticket">
+				<img src="{% static 'media/Logo.svg' %}" alt="Logo">
+				<h1>
+					<span>Сіздің талон</span>
+					<span>Ваш талон</span>
+					<span>Your ticket</span>
+				</h1>
+				{% if ticket.status == "waiting" or ticket.status == "in_progress" %}
+				<h2>№<span>{{ ticket.number }}</span></h2>
+				{% endif %}
+				{% if ticket.status == 'in_progress' %}
+				<h3>
+					<span>Күй:<span>Орындалуда</span></span>
+					<span>Статус:<span>В процессе</span></span>
+					<span>Status:<span>In progress</span></span>
+				</h3>
+				<h3>
+					<span>Үстелге өтіңіз: <span>{{ ticket.consultant.table_number }}</span></span>
+					<span>Пройдите к столу: <span>{{ ticket.consultant.table_number }}</span></span>
+					<span>Go to the table: <span>{{ ticket.consultant.table_number }}</span></span>
+				</h3>
+				{% elif ticket.status == 'waiting' %}
+				<h3>
+					<span>Күй:<span>Күтуде</span></span>
+					<span>Статус:<span>В ожидании</span></span>
+					<span>Status:<span>Waiting</span></span>
+				</h3>
+				{% else %}
+				<h3>
+					<span>Билетіңіз енді жарамсыз,<br> кезекке қайта қосылыңыз.</span>
+				</h3>
+				<h3>
+					<span>Ваш талон более не действителен,<br> займите очередь снова.</span>
+				</h3>
+				<h3>
+					<span>Your ticket is no longer valid,<br> please join the queue again.</span>
+				</h3>
+				{% endif %}
+			</div><!-- /ticket -->
+			<button onclick="closewindow()">
+				<span>Кезекке қайта қосылыңыз</span>
+				<span>Повторно занять очередь</span>
+				<span>Re-join the queue</span>
+			</button>
+		</div><!-- /ticketArea -->
+	</div><!-- /ticketWindow -->
+	{% if ticket and not is_from_subnet and not ticket.status == 'served' and not ticket.status == 'timeout' %}
+	<script>
+		setTimeout(function () {
+			window.location.reload(true);
+		}, 10000);
+	</script>
+	{% endif %}
+</body>
 
-        .alert-heading {
-            font-size: 1.25rem;
-        }
-
-        .alert-container {
-            flex-direction: column;
-        }
-
-        .alert-container .alert {
-            margin: 10px 0;
-            flex: 1 1 100%;
-        }
-    }
-</style>
-
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <div class="card shadow-lg border-0" style="max-width: 1400px; margin: auto;">
-                <div class="card-body text-center p-5" style="max-width: 1400px; margin: auto;">
-                    <img class="card-logo mb-4 mx-auto d-block" src="{% static 'media/Logo.svg' %}" alt="Logo">
-                    <h5 class="card-title mb-4">Статус Вашего Талона</h5>
-
-                    {% if is_from_subnet %}
-                    <div class="alert-container">
-                        <div class="alert alert-warning">
-                            <h4 class="alert-heading">Купоныңызды суретке түсіріңіз, бұл бет автоматты түрде жабылады.
-                            </h4>
-                        </div>
-                        <div class="alert alert-warning">
-                            <h4 class="alert-heading">Сделайте фотографию вашего талона, данная страница будет
-                                автоматически закрыта.</h4>
-                        </div>
-                        <div class="alert alert-warning">
-                            <h4 class="alert-heading">Take a photo of your ticket, this page will automatically close.
-                            </h4>
-                        </div>
-                    </div>
-                    <script>
-                        setTimeout(function () {
-                            window.close();
-                        }, 30000);
-                    </script>
-                    {% endif %}
-
-                    {% if ticket %}
-                    <div class="alert 
-                        {% if ticket.status == 'waiting' %}
-                            alert-secondary
-                        {% elif ticket.status == 'in_progress' %}
-                            alert-info
-                        {% elif ticket.status == 'served' %}
-                            alert-success
-                        {% elif ticket.status == 'timeout' %}
-                            alert-danger
-                        {% endif %}
-                    ">
-                        <h4 class="alert-heading">
-                            {% if ticket.status == 'served' %}
-                            Ваш талон больше не действителен. Спасибо за обращение!
-                            {% elif ticket.status == 'timeout' %}
-                            Номер вашего талона истек.
-                            {% else %}
-                            Номер талона: <span class="fw-bolder">{{ ticket.number }}</span>
-                            {% endif %}
-                        </h4>
-
-                        {% if ticket.status == 'in_progress' %}
-                        <p class="mb-0">
-                            <span class="fw-bolder">Статус: В процессе</span><br>
-                            <span class="fw-bolder text-primary">Пройдите к столу:
-                                {{ticket.consultant.table_number}}</span>
-                        </p>
-                        {% elif ticket.status == 'waiting' %}
-                        <p class="mb-0"><span class="fw-bolder">Статус: В ожидании</span></p>
-                        {% endif %}
-                    </div>
-
-                    {% if ticket.status == 'served' or ticket.status == 'timeout' %}
-                    <div class="alert alert-warning mt-3">
-                        <p class="fw-bolder">За повторным обращением отсканируйте QR-код.</p>
-                    </div>
-
-                    <script>
-                        setTimeout(function () {
-                            try {
-                                window.open('', '_self', '');
-                                window.close();
-                                if (!window.closed) {
-                                    window.location.href = 'about:blank';
-                                }
-                            } catch (e) {
-                                window.location.href = 'about:blank';
-                            }
-                        }, 9900);
-                    </script>
-                    {% endif %}
-
-                    {% else %}
-                    <div class="alert alert-danger">
-                        <h4 class="alert-heading">Данного талона не существует, отсканируйте QR-код.</h4>
-                    </div>
-                    <script>
-                        setTimeout(function () {
-                            try {
-                                window.open('', '_self', '');
-                                window.close();
-                                if (!window.closed) {
-                                    window.location.href = 'about:blank';
-                                }
-                            } catch (e) {
-                                window.location.href = 'about:blank';
-                            }
-                        }, 9900);
-                    </script>
-                    {% endif %}
-
-                    {% if is_from_subnet and not ticket.status == 'served' and not ticket.status == 'timeout' %}
-                    <script>
-                        function closewindow() {
-                            window.open('', '_self', '');
-                            window.close();
-                            if (!window.closed) {
-                                window.location.href = 'about:blank';
-                            }
-                        }
-                    </script>
-                    <button onclick="closewindow()" class="full-width-btn">
-                        <span class="fw-bolder p-2">
-                            Кезекке қайта қосылыңыз / Повторно занять очередь / Re-join the queue
-                        </span>
-                    </button>
-                    {% endif %}
-
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% if ticket and not is_from_subnet and not ticket.status == 'served' and not ticket.status == 'timeout' %}
-<script>
-    setTimeout(function () {
-        window.location.reload(true);
-    }, 10000);
-</script>
-{% endif %}
-{% endblock main %}
+</html>
