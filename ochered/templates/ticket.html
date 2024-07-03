@@ -108,11 +108,13 @@
 				</h3>
 				{% endif %}
 			</div><!-- /ticket -->
+			{% if is_from_subnet %}
 			<button onclick="closewindow()">
 				<span>Кезекке қайта қосылыңыз</span>
 				<span>Повторно занять очередь</span>
 				<span>Re-join the queue</span>
 			</button>
+			{%endif%}
 		</div><!-- /ticketArea -->
 	</div><!-- /ticketWindow -->
 	{% if ticket and not is_from_subnet and not ticket.status == 'served' and not ticket.status == 'timeout' %}
