@@ -8,9 +8,7 @@ from django.db.models import (
     F,
     Q,
     Avg,
-    Min,
     Count,
-    FloatField,
     DurationField,
     ExpressionWrapper,
 )
@@ -24,7 +22,7 @@ from ochered_app import models
 
 def qr_page(request):
     try:
-        return render(request, "qr.html", context={})
+        return render(request, "qrpage.html", context={})
     except Exception as e:
         return HttpResponse(str(e))
 
@@ -209,7 +207,6 @@ def get_consultant_statistics():
         )
     )
 
-
     statistics = (
         tickets.values("consultant__user__first_name", "consultant__user__last_name")
         .annotate(
@@ -237,7 +234,6 @@ def get_consultant_statistics():
             stat["avg_service_time"] = avg_service_time.total_seconds()
         else:
             stat["avg_service_time"] = 0
-
 
     return statistics_list
 
