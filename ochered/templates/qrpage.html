@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="{% static 'css/QRpageCSS.css' %}" />
+
+	<title>{% block title %}QR{% endblock %}</title>
+</head>
+
+<body>
+	<div class="QRpage">
+		<div class="QRpage_column">
+			<img class="QRpage-logo" src="{% static 'media/logoQR.png' %}" alt="Logo">
+
+			<div class="QRpage_info">
+				<span>QR сканерін сканерлеңіз немесе кезекке тұру үшін түймені басыңыз</span>
+				<hr>
+				<span>Отсканируйте QR или нажмите кнопку чтобы занять очередь</span>
+				<hr>
+				<span>Scan the QR or click the button to get in line</span>
+			</div><!-- /QRpage_info -->
+			<a class="QRpage_lineBtn" href="{% url 'register_ticket' %}" target="_blank">
+				<span>Бұрылыс жасаңыз</span>
+				|
+				<span>Занять очередь</span>
+				|
+				<span>Take a place in line</span>
+			</a><!-- /QRpage_lineBtn -->
+		</div><!-- /QRpage_column -->
+
+		<div class="QRpage-QR">
+			<img src="{% static 'media/qr-code.png' %}" alt="QR Code">
+		</div><!-- /QRpage-QR -->
+
+	</div><!-- /QRpage -->
+</body>
+
+</html>
