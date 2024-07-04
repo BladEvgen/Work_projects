@@ -209,8 +209,6 @@ def get_consultant_statistics():
         )
     )
 
-    min_served_at = tickets.aggregate(min_served_at=Min("served_at"))["min_served_at"]
-    days_since_start = (today - min_served_at).days if min_served_at else 1
 
     statistics = (
         tickets.values("consultant__user__first_name", "consultant__user__last_name")
@@ -228,9 +226,6 @@ def get_consultant_statistics():
                 "number",
                 filter=Q(served_at__gte=start_of_month, served_at__lte=end_of_month),
             ),
-            tickets_per_day=ExpressionWrapper(
-                Count("number") / days_since_start, output_field=FloatField()
-            ),
         )
         .order_by("consultant__user__last_name", "consultant__user__first_name")
     )
@@ -243,8 +238,6 @@ def get_consultant_statistics():
         else:
             stat["avg_service_time"] = 0
 
-        if stat["tickets_per_day"] is None:
-            del stat["tickets_per_day"]
 
     return statistics_list
 
