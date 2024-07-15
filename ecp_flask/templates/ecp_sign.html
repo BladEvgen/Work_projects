@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Подписание файла</title>
   <link rel="stylesheet" href="{{url_for('static',filename='dist/css/output.css')}}">
-  <link rel="stylesheet" href="{{ url_for ('static' ,filename='fontawesome/css/all.css') }}" />
+  <link rel="stylesheet" href="{{url_for('static',filename='fontawesome/css/all.css')}}" />
   <style>
     .password-toggle {
       position: relative;
@@ -14,9 +14,39 @@
 
     .toggle-password {
       position: absolute;
-      top: 66%;
+      top: 50%;
       right: 10px;
-      transform: translateY(-50%);
+      transform: translateY(20%);
+      cursor: pointer;
+    }
+
+    .file-drop-area {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border: 2px dashed #4a5568;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #2d3748;
+    }
+
+    .file-drop-area:hover {
+      background-color: #4a5568;
+    }
+
+    .file-drop-area .file-msg {
+      text-align: center;
+    }
+
+    .file-drop-area .file-input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
       cursor: pointer;
     }
   </style>
@@ -40,7 +70,7 @@
           <div class="flex items-center px-3 py-2">
             <input type="text" id="searchInput"
               class="w-full pl-3 ml-3 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md text-black"
-              placeholder="Search">
+              placeholder="Search" autocomplete="off">
           </div>
           <ul class="max-h-60 overflow-y-auto rounded-md shadow-sm w-full">
             {% for package in packages %}
@@ -52,31 +82,27 @@
         </div>
         <p id="selectedPackage" class="mt-2 text-sm text-gray-400"></p>
         <button type="button" id="downloadExcel"
-          class="text-white bg-gradient-to-br from-pink-500 to-orange-400 hover:bg-gradient-to-bl  focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
-          Скачать
-          Excel
+          class="text-white bg-gradient-to-br from-pink-500 to-orange-400 hover:bg-gradient-to-bl focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+          Скачать Excel
           <i class="fa-solid fa-file-csv"></i>
         </button>
       </div>
       <!-- PDF Input -->
-      <div class="mb-6 w-full max-w-md" id="pdfInputContainer" hidden>
-        <label for="fileInput" class="block text-sm text-gray-400 mb-2">PDF файл</label>
-        <label for="fileInput"
-          class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
-          <div class="flex flex-col items-center justify-center pt-5 pb-6">
-            <i class="fa fa-cloud-upload" aria-hidden="true"></i>
-            <p id="pdfFileName" class="mb-2 text-sm text-gray-500">Click to upload or drag and drop</p>
-            <p class="text-xs">PDF</p>
-          </div>
-          <input id="fileInput" type="file" class="hidden" name="file" accept=".pdf" onchange="updateFileName(this)"
-            required />
-        </label>
+      <div class="mb-6 w-full max-w-md" id="pdfInputContainer">
+        <label for="fileInput" class="block text-sm text-gray-700 font-semibold mb-2">PDF файл</label>
+        <div
+          class="file-drop-area border-2 border-dashed border-green-400 p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out hover:bg-green-50 hover:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50">
+          <span class="file-msg text-green-600 font-medium">Click to upload or drag and drop</span>
+          <input id="fileInput" type="file" class="file-input opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+            name="file" accept=".pdf" onchange="updateFileName(this)" required />
+        </div>
+        <p id="pdfFileName" class="mt-2 text-sm text-gray-700 truncate text-center"></p>
       </div>
       <!-- P12 Input -->
       <div class="mb-6 w-full max-w-md">
         <label for="keyPath" class="block text-sm text-gray-400 mb-2">Файл ЭЦП (.p12)</label>
         <label for="keyPath"
-          class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 p-2 text-white">
+          class="block w-full text-sm border border-gray-300 rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 p-2 text-white">
           <input id="keyPath" type="file" class="hidden" name="keyPath" accept=".p12" onchange="updateFileName(this)"
             required />
           <span id="p12FileName" class="text-white-500">Выберете файл ЭЦП</span>
@@ -150,6 +176,7 @@
         document.getElementById("fileInput").removeAttribute("required");
       });
     });
+
     document.getElementById('downloadExcel').addEventListener('click', function () {
       const selectedPackage = document.getElementById('selectedPackage').textContent.replace('Выбран: ', '').trim();
       if (!selectedPackage) {
@@ -184,6 +211,7 @@
           showAlert('Ошибка при скачивании файла. Попробуйте позже.');
         });
     });
+
     const passwordInput = document.getElementById("password");
     const togglePassword = document.querySelector(".toggle-password");
 
@@ -207,7 +235,10 @@
 
     async function signFiles() {
       try {
-        const host_url = "https://ecp.medkrmu.kz/"
+
+        const host_url = "https://ecp.medkrmu.kz//";
+        //const host_url = "http://91.185.12.100:5002/";
+
         console.log("Starting file signing process...");
         document.getElementById("signButton").disabled = true;
 
@@ -220,9 +251,11 @@
         }
 
         const formData = new FormData();
+        let isPackage = false;
 
         if (selectedPackage) {
           formData.append("package", selectedPackage);
+          isPackage = true;
         } else {
           const fileInput = document.getElementById("fileInput");
 
@@ -248,8 +281,13 @@
             const blob = new Blob([xhr.response], {
               type: "application/octet-stream",
             });
-            const fileName = selectedPackage ? `${selectedPackage}_signed.pdf` : document.getElementById("fileInput").files[0].name.replace(".pdf", "_signed.pdf");
-            if (!selectedPackage) {
+            const fileName = isPackage
+              ? `${selectedPackage}_signed.pdf`
+              : document
+                .getElementById("fileInput")
+                .files[0].name.replace(".pdf", "_signed.pdf");
+
+            if (!isPackage) {
               const downloadLink = document.createElement("a");
               downloadLink.href = window.URL.createObjectURL(blob);
               downloadLink.setAttribute("download", fileName);
@@ -257,9 +295,8 @@
               downloadLink.click();
               document.body.removeChild(downloadLink);
               console.log("File signed and downloaded successfully.");
+              showSuccess("Файл успешно подписан и загружен.");
             }
-            showSuccess(`Пакет <span class="text-black">${selectedPackage}</span> успешно подписан. Вы можете проверить его <a href="https://certificates.medkrmu.kz/download?selected_path=${selectedPackage}" target="_blank" class="text-yellow-500 underline">здесь</a>.`);
-
           } else {
             console.error("Failed to sign files. Status code: " + xhr.status);
             showAlert(
@@ -272,7 +309,6 @@
         };
 
         xhr.send(formData);
-
       } catch (error) {
         console.error("Error in signing files:", error);
         showAlert(
@@ -284,18 +320,21 @@
       }
     }
 
+
     function showAlert(message) {
       const alertContainer = document.getElementById("alertContainer");
       const alertMessage = document.getElementById("alertMessage");
       alertMessage.textContent = message;
       alertContainer.classList.remove("hidden");
     }
+
     function showSuccess(message) {
       const successContainer = document.getElementById("successContainer");
       const successMessage = document.getElementById("successMessage");
       successMessage.innerHTML = message;
       successContainer.classList.remove("hidden");
     }
+
     document
       .getElementById("fileForm")
       .addEventListener("submit", function (event) {
@@ -311,6 +350,40 @@
           document.getElementById("successContainer").classList.add("hidden");
         }
       });
+    });
+
+    const fileDropArea = document.querySelector('.file-drop-area');
+    const fileInput = document.getElementById('fileInput');
+
+    fileDropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      fileDropArea.classList.add('bg-gray-600');
+    });
+
+    fileDropArea.addEventListener('dragleave', () => {
+      fileDropArea.classList.remove('bg-gray-600');
+    });
+
+    fileDropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      fileDropArea.classList.remove('bg-gray-600');
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type === "application/pdf") {
+        fileInput.files = files;
+        updateFileName(fileInput);
+      }
+      else {
+        showAlert("Разрешается грузить только PDF")
+      }
+    })
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file && file.type !== 'application/pdf') {
+        fileInput.value = '';
+        showAlert("Разрешается грузить только PDF файлы");
+      } else {
+        updateFileName(fileInput);
+      }
     });
   </script>
 </body>

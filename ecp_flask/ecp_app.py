@@ -25,6 +25,7 @@ if os.path.exists(dotenv_path):
 app = Flask(__name__)
 CORS(app)
 HOST_URL = "https://ecp.medkrmu.kz/"
+# HOST_URL = "http://91.185.12.100:5002"
 
 db_connection = mysql.connector.connect(
     host=os.getenv("DB_HOST"),
@@ -122,12 +123,12 @@ def download_excel():
     package_name = data.get("package")
 
     if not package_name:
-        return jsonify({"error": "Package name is required"}), 400
+        return jsonify({"message": "Package name is required"}), 400
 
     query = "SELECT * FROM certificate WHERE package_name = %s"
     results = execute_query(query, (package_name,), db=db_connection_certificate)
     if not results:
-        return jsonify({"error": "No data found for the selected package"}), 404
+        return jsonify({"message": "No data found for the selected package"}), 404
 
     df = pd.DataFrame(results)
     output = io.BytesIO()
@@ -241,9 +242,8 @@ def sign_file():
     package = request.form.get("package")
 
     key_path = ""
-    file_path = ""
-    signed_file_path = ""
-    file_id = None
+    signed_folder = ""
+    verification_info = None
     successfully_signed_files = []
 
     for file in key_files:
@@ -258,74 +258,42 @@ def sign_file():
             signed_folder = directory
             os.makedirs(directory, exist_ok=True)
         else:
-            directory = "/var/www/kirill/certificates.medkrmu/cert_date_base/ecp_signed_files_folder/pdf/"
+            directory = "/var/www/ecp.medkrmu/KRMU-main/static/signed_data/file/"
             signed_folder = directory
             os.makedirs(directory, exist_ok=True)
 
-        verification_info = None
-        if package:
-            for filename in os.listdir(directory):
-                if filename.endswith(".pdf"):
-                    file_path = os.path.join(directory, filename)
-                    signed_pdf, file_id = sign_file_gos(key_path, password, file_path)
-                    verification_info = print_verification_info(
-                        get_verification_result(file_id)
-                    )
-                    break
+        for file in files:
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
+            file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+            original_filename = os.path.splitext(file.filename)[0]
 
-        if not verification_info:
-            return (
-                jsonify({"message": "Verification info could not be retrieved."}),
-                400,
+            signed_pdf, file_id = sign_file_gos(key_path, password, file_path)
+
+            verification_info = print_verification_info(
+                get_verification_result(file_id)
             )
-
-        files_to_sign = []
-        if package:
-            for filename in os.listdir(directory):
-                if filename.endswith(".pdf"):
-                    file_path = os.path.join(directory, filename)
-                    original_filename = os.path.splitext(filename)[0]
-
-                    signed_pdf, file_id = sign_file_gos(key_path, password, file_path)
-
-                    merged_pdf_content = process_pdf(signed_pdf, verification_info)
-                    merged_pdf = merge_pdfs(file_path, merged_pdf_content)
-                    final_signed_pdf, final_file_id = sign_file_gos(
-                        key_path, password, merged_pdf
-                    )
-
-                    signed_filename = f"{original_filename}.pdf"
-                    files_to_sign.append((signed_filename, final_signed_pdf))
-                    successfully_signed_files.append(original_filename)
-        else:
-            for file in files:
-                file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
-                file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-                original_filename = os.path.splitext(file.filename)[0]
-
-                signed_pdf, file_id = sign_file_gos(key_path, password, file_path)
-
-                merged_pdf_content = process_pdf(signed_pdf, verification_info)
-                merged_pdf = merge_pdfs(file_path, merged_pdf_content)
-                final_signed_pdf, final_file_id = sign_file_gos(
-                    key_path, password, merged_pdf
+            if not verification_info:
+                print("Verification info could not be retrieved")
+                return (
+                    jsonify({"message": "Verification info could not be retrieved."}),
+                    400,
                 )
 
-                signed_filename = f"{original_filename}.pdf"
-                files_to_sign.append((signed_filename, final_signed_pdf))
+            merged_pdf_content = process_pdf(signed_pdf, verification_info)
+            merged_pdf = merge_pdfs(file_path, merged_pdf_content)
 
-        rename_pdfs_to_old(directory)
+            final_signed_pdf, final_file_id = sign_file_gos(
+                key_path, password, merged_pdf
+            )
 
-        for signed_filename, final_signed_pdf in files_to_sign:
+            signed_filename = f"{original_filename}_signed.pdf"
             signed_file_path = os.path.join(signed_folder, signed_filename)
             with open(signed_file_path, "wb") as f:
                 f.write(final_signed_pdf)
 
+            successfully_signed_files.append(signed_filename)
             save_to_database(
-                os.path.basename(signed_file_path),
-                signed_file_path,
-                "sign_file",
-                "OK",
+                os.path.basename(signed_file_path), signed_file_path, "sign_file", "OK"
             )
 
         if os.path.exists(key_path):
@@ -345,7 +313,12 @@ def sign_file():
             except Exception as e:
                 print(f"Error: {e}")
 
-        return jsonify({"message": "All files signed successfully"}), 200
+        return (
+            send_file(
+                signed_file_path, as_attachment=True, download_name=signed_filename
+            ),
+            200,
+        )
 
     except Exception as e:
         save_to_database(
@@ -488,4 +461,4 @@ def verify_data():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True, port=5000)
+    app.run(host="0.0.0.0", debug=True)
