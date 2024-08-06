@@ -42,10 +42,10 @@ class Ticket(models.Model):
     STATUS_TIMEOUT = "timeout"
 
     STATUS_CHOICES = [
-        (STATUS_WAITING, "Waiting"),
-        (STATUS_IN_PROGRESS, "In progress"),
-        (STATUS_SERVED, "Served"),
-        (STATUS_TIMEOUT, "Time Out"),
+        (STATUS_WAITING, "В ожидании"),
+        (STATUS_IN_PROGRESS, "В процессе"),
+        (STATUS_SERVED, "Обслужен"),
+        (STATUS_TIMEOUT, "Тайм аут"),
     ]
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)

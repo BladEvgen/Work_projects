@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-host_names = ["RogStrix", "MacBook-Pro.local"]
+host_names = ["RogStrix", "MacBook-Pro.local", "MacbookPro"]
 DEBUG = True if socket.gethostname() in host_names else False
 DOTENV_PATH = BASE_DIR / ".env"
 if DOTENV_PATH.exists():

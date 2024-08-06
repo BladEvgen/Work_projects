@@ -175,3 +175,4 @@ diagram_api/templates/line_marks.html
 /ochered/restart_app.sh
 /ochered/chered_uvicorn.service
 ochered/static/media/qr-code.png
+/ochered/ochered_app/migrations
