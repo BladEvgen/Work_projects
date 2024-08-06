@@ -1,76 +1,291 @@
 {% extends "components/base.html" %}
 
 {% block title %}Queue KRMU{% endblock %}
+{% load static %}
 
 {% block main %}
 <style>
-    .btn-statistics {
-        font-size: 20px;
-        font-weight: 600;
-        padding: 8px 20px;
-        border-radius: 25px;
+    body {
+        background: url("{% static 'media/Logo.svg' %}") no-repeat center center fixed;
+        background-size: 950px;
+        background-blend-mode: overlay;
+        background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    @media (max-width: 1200px) {
+        body {
+            background-size: 800px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        body {
+            background-size: 650px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        body {
+            background-size: 500px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        body {
+            background-size: 400px;
+        }
+    }
+
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #002D72;
         color: #fff;
-        background-color: #6c757d;
-        background-image: linear-gradient(180deg, #6c757d, #5a6268);
-        border: 1px solid #6c757d;
+        padding: 15px 20px;
+        width: 100%;
+    }
+
+    .consultant-info {
+        display: flex;
+        align-items: center;
+    }
+
+    .consultant-info h1 {
+        font-size: 24px;
+        margin: 0;
+    }
+
+    .profile-link {
+        font-size: 16px;
+        font-weight: 600;
+        color: #50c878;
+        text-decoration: none;
+        margin-left: 15px;
         transition: all 0.3s ease;
     }
 
-    .btn-statistics:hover {
+    .profile-link:hover {
+        color: #398a54;
+        text-decoration: underline;
+    }
+
+    .waiting-h3 {
+        font-size: 20px;
+        margin: 0;
+        background-color: #FFA500;
+        padding: 5px 10px;
+        border-radius: 5px;
         color: #fff;
-        background-color: #343a40;
-        background-image: linear-gradient(180deg, #343a40, #1d2124);
-        border-color: #343a40;
+    }
+
+    .tickeTable {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 20px 0;
+        flex-wrap: wrap;
+        border-bottom: none;
+    }
+
+    .tickeTable-ticket,
+    .tickeTable-table {
+        flex: 1 1 45%;
+        margin: 10px 0;
+        font-size: 36px;
+        text-align: center;
+    }
+
+    .list-group {
+        background-color: transparent;
+        padding: 15px;
+    }
+
+    .list-group-item {
+        font-size: 24px;
+        text-align: center;
+        padding: 10px;
+        border: 1px solid #465768;
+        background-color: transparent;
+    }
+
+    .line-buttons {
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 18px;
+        margin: 5px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        border: none;
+        color: #212529;
+    }
+
+    .btn-warning:hover {
+        background-color: #e0a800;
+    }
+
+    .btn-logout {
+        background-color: #dc3545;
+        border: none;
+        color: #fff;
+    }
+
+    .btn-logout:hover {
+        background-color: #c82333;
+    }
+
+    .btn-statistics {
+        background-color: #6c757d;
+        border: none;
+        color: #fff;
+    }
+
+    .btn-statistics:hover {
+        background-color: #5a6268;
+    }
+
+    @media (max-width: 1200px) {
+
+        .tickeTable-ticket,
+        .tickeTable-table {
+            font-size: 30px;
+        }
+
+        .list-group-item {
+            font-size: 22px;
+        }
+
+        .btn {
+            font-size: 16px;
+            padding: 8px 16px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .header-container {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .waiting-h3 {
+            margin-top: 10px;
+        }
+
+        .tickeTable {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tickeTable-ticket,
+        .tickeTable-table {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .line-buttons {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .consultant-info h1 {
+            font-size: 20px;
+        }
+
+        .profile-link {
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .waiting-h3 {
+            font-size: 18px;
+        }
+
+        .tickeTable-ticket,
+        .tickeTable-table {
+            font-size: 18px;
+        }
+
+        .list-group-item {
+            font-size: 20px;
+        }
+
+        .btn {
+            font-size: 14px;
+        }
     }
 </style>
-<section class="line">
+
+<section class="container-fluid">
     <div class="header-container">
         <div class="consultant-info">
             {% if not consultant.user.first_name or not consultant.user.last_name %}
-            <h1 class="currentСonsultant">Консультант</h1>
+            <h1 class="currentConsultant">Консультант</h1>
             {% else %}
-            <h1 class="currentСonsultant">Консультант: {{ consultant.user.last_name }} {{ consultant.user.first_name }}
-
+            <h1 class="currentConsultant">Консультант: {{ consultant.user.last_name }} {{ consultant.user.first_name }}
             </h1>
             {% endif %}
+            <a href="{% url 'profile' username=request.user.username %}" class="profile-link">Мой профиль</a>
         </div>
         <h3 class="waiting-h3">Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
     </div>
 
     <div class="tickeTable">
-
-        <h2 class="tickeTable-ticket" id="current-ticket">Текущий Талон: <span>
+        <h2 class="tickeTable-ticket text-center" id="current-ticket">Текущий Талон: <span>
                 {% if current_ticket %}
                 {{ current_ticket.number }}
                 {% else %}----
                 {% endif %}</span></h2>
-        <h2 class="tickeTable-table text-danger">Стол <span>№{{ consultant.table_number }}</span>
-        </h2>
-    </div><!-- /tickeTable -->
+        <h2 class="tickeTable-table text-danger text-center">Стол <span>№{{ consultant.table_number }}</span></h2>
+    </div>
 
-    <div class="col-md-12">
-
+    <div class="col-md-8 mx-auto">
         <ul id="waiting-tickets" class="list-group">
             {% for ticket in tickets %}
             <li class="list-group-item" id="ticket-{{ ticket.number }}">Талон {{ ticket.number }}</li>
             {% empty %}
             <li class="list-group-item"> Нет талонов</li>
             {% endfor %}
-        </ul><!-- /list-group -->
-    </div><!-- /col-md-12 -->
+        </ul>
+    </div>
+
     {% if request.user.is_authenticated %}
     <div class="line-buttons">
-        <button class="btn btn-primary {% if current_ticket %}d-none{% endif %}" id="call-next">Вызвать</button>
         {% if request.user.is_staff %}
-        <a href="{% url 'statistic' %}" class="btn btn-statistics ml-2">Статистика</a>
+        <a href="{% url 'statistic' %}" class="btn btn-statistics">Статистика</a>
         {% endif %}
+        <button class="btn btn-primary {% if current_ticket %}d-none{% endif %}" id="call-next">Вызвать</button>
         <button class="btn btn-warning {% if not current_ticket %}d-none{% endif %}"
             id="complete-ticket">Закончить</button>
-        <a href="/logout/" class="btn btn-logout btn-outline-danger">Выйти</a>
-    </div><!-- /line-buttons -->
+        <a href="/logout/" class="btn btn-logout">Выйти</a>
+    </div>
     {% endif %}
-
-</section><!-- /line -->
+</section>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
@@ -78,7 +293,7 @@
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
+            for (let i = 0; cookies.length; i++) {
                 const cookie = cookies[i].trim();
                 if (cookie.substring(0, name.length + 1) === (name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
