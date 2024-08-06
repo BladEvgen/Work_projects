@@ -1,25 +1,26 @@
 import datetime
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
+from channels.layers import get_channel_layer
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
 from django.db.models import (
+    F,
+    Q,
     Avg,
     Count,
     DurationField,
     ExpressionWrapper,
-    F,
-    Q,
 )
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.views import View
 from django.urls import reverse
 from django.utils import timezone
-from django.views import View
+from django.utils.timezone import localtime
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 
 from ochered_app import models, utils
 
@@ -247,8 +248,11 @@ class ConsultantStatisticsView(View):
         data = get_consultant_statistics()
         return JsonResponse(data, safe=False)
 
+
 @login_required
 def change_data(request, username):
+    if request.user.username != username:
+        return redirect("change_data", username=request.user.username)
     user_profile = get_object_or_404(models.Consultant, user=request.user)
 
     if request.method == "POST":
@@ -264,7 +268,7 @@ def change_data(request, username):
                 messages.error(request, "Password does not meet the required criteria.")
             else:
                 request.user.set_password(password)
-        
+
         if first_name:
             request.user.first_name = first_name
         if last_name:
@@ -278,14 +282,21 @@ def change_data(request, username):
 
     return render(request, "change_data.html", context={"user_profile": user_profile})
 
+
 class ProfileView(View):
     template_name = "profile.html"
 
     def get(self, request, username):
+        if request.user.username != username:
+            return redirect("profile", username=request.user.username)
         user = get_object_or_404(User, username=username)
         user_profile, created = models.Consultant.objects.get_or_create(user=user)
-        tickets = models.Ticket.objects.filter(consultant=user_profile).order_by('-created_at')[:1]
-        served_ticket_count = models.Ticket.objects.filter(consultant=user_profile, status='served').count()
+        tickets = models.Ticket.objects.filter(consultant=user_profile).order_by(
+            "-created_at"
+        )[:1]
+        served_ticket_count = models.Ticket.objects.filter(
+            consultant=user_profile, status="served"
+        ).count()
         return render(
             request,
             template_name=self.template_name,
@@ -297,6 +308,8 @@ class ProfileView(View):
         )
 
     def post(self, request, username):
+        if request.user.username != username:
+            return redirect("profile", username=request.user.username)
         user = get_object_or_404(User, username=username)
         user_profile, created = models.Consultant.objects.get_or_create(user=user)
         return render(
@@ -306,18 +319,24 @@ class ProfileView(View):
         )
 
 
+@login_required
 def load_more_tickets(request, username):
+    if request.user.username != username:
+        return redirect("profile", username=request.user.username)
     user = get_object_or_404(User, username=username)
     user_profile = get_object_or_404(models.Consultant, user=user)
-    page = request.GET.get('page', 1)
-    tickets = models.Ticket.objects.filter(consultant=user_profile).order_by('-created_at')
+    page = request.GET.get("page", 1)
+    tickets = models.Ticket.objects.filter(consultant=user_profile).order_by(
+        "-created_at"
+    )
     paginator = Paginator(tickets, 10)
     page_obj = paginator.get_page(page)
     tickets_data = [
         {
-            'number': ticket.number,
-            'status': ticket.get_status_display(),
-            'created_at': ticket.created_at.strftime('%H:%M %d.%m.%Y')
-        } for ticket in page_obj
+            "number": ticket.number,
+            "status": ticket.get_status_display(),
+            "created_at": localtime(ticket.created_at).strftime("%H:%M %d.%m.%Y"),
+        }
+        for ticket in page_obj
     ]
-    return JsonResponse({'tickets': tickets_data, 'has_more': page_obj.has_next()})
+    return JsonResponse({"tickets": tickets_data, "has_more": page_obj.has_next()})
