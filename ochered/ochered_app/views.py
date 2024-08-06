@@ -2,22 +2,26 @@ import datetime
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from django.db.models import (
-    F,
-    Q,
     Avg,
     Count,
     DurationField,
     ExpressionWrapper,
+    F,
+    Q,
 )
-from django.views import View
-from django.utils import timezone
-from django.shortcuts import redirect, render
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.views import View
 
-from ochered_app import models
+from ochered_app import models, utils
 
 
 def qr_page(request):
@@ -242,3 +246,78 @@ class ConsultantStatisticsView(View):
     def get(self, request):
         data = get_consultant_statistics()
         return JsonResponse(data, safe=False)
+
+@login_required
+def change_data(request, username):
+    user_profile = get_object_or_404(models.Consultant, user=request.user)
+
+    if request.method == "POST":
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+
+        if password and confirm_password:
+            if password != confirm_password:
+                messages.error(request, "Passwords do not match.")
+            elif not utils.password_check(password):
+                messages.error(request, "Password does not meet the required criteria.")
+            else:
+                request.user.set_password(password)
+        
+        if first_name:
+            request.user.first_name = first_name
+        if last_name:
+            request.user.last_name = last_name
+
+        request.user.save()
+        user_profile.save()
+        messages.success(request, "Profile updated successfully.")
+
+        return redirect(reverse("profile", args=[username]))
+
+    return render(request, "change_data.html", context={"user_profile": user_profile})
+
+class ProfileView(View):
+    template_name = "profile.html"
+
+    def get(self, request, username):
+        user = get_object_or_404(User, username=username)
+        user_profile, created = models.Consultant.objects.get_or_create(user=user)
+        tickets = models.Ticket.objects.filter(consultant=user_profile).order_by('-created_at')[:1]
+        served_ticket_count = models.Ticket.objects.filter(consultant=user_profile, status='served').count()
+        return render(
+            request,
+            template_name=self.template_name,
+            context={
+                "user_profile": user_profile,
+                "tickets": tickets,
+                "served_ticket_count": served_ticket_count,
+            },
+        )
+
+    def post(self, request, username):
+        user = get_object_or_404(User, username=username)
+        user_profile, created = models.Consultant.objects.get_or_create(user=user)
+        return render(
+            request,
+            template_name=self.template_name,
+            context={"user_profile": user_profile},
+        )
+
+
+def load_more_tickets(request, username):
+    user = get_object_or_404(User, username=username)
+    user_profile = get_object_or_404(models.Consultant, user=user)
+    page = request.GET.get('page', 1)
+    tickets = models.Ticket.objects.filter(consultant=user_profile).order_by('-created_at')
+    paginator = Paginator(tickets, 10)
+    page_obj = paginator.get_page(page)
+    tickets_data = [
+        {
+            'number': ticket.number,
+            'status': ticket.get_status_display(),
+            'created_at': ticket.created_at.strftime('%H:%M %d.%m.%Y')
+        } for ticket in page_obj
+    ]
+    return JsonResponse({'tickets': tickets_data, 'has_more': page_obj.has_next()})
