@@ -1,0 +1,273 @@
+{% extends "components/base.html" %}
+{% load django_app_filters_and_tags %}
+{% load static %}
+{% block title %}Profile{% endblock title %}
+
+{% block main %}
+<style>
+    body {
+        background: url("{% static 'media/Logo.svg' %}") no-repeat center center fixed;
+        background-size: 150px;
+        background-blend-mode: overlay;
+        background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .profile-card {
+        position: relative;
+        padding: 20px;
+        margin-top: 50px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+    }
+
+    .profile-card .card-title {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .profile-card .card-text {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+
+    .profile-card .edit-icon {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
+    .profile-card .back-icon {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
+    .profile-card .greeting {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .profile-card .info-box {
+        background: #f1f1f1;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        text-align: left;
+    }
+
+    .profile-card .info-box h5 {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .profile-card .info-box .table-number {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .profile-card .info-box .table-number span {
+        font-size: 1.5rem;
+        margin-left: 10px;
+    }
+
+    .ticket-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .ticket-list li {
+        background: #e9ecef;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .ticket-list li .status {
+        font-weight: bold;
+    }
+
+    .buttons-container {
+        display: flex;
+        justify-content: space-around;
+        padding: 10px;
+        background: #f1f1f1;
+        border-radius: 5px;
+    }
+
+    .load-more-btn,
+    .toggle-all-btn {
+        display: inline-block;
+        margin: 10px;
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: bold;
+        color: #fff;
+        background: #007bff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .summary-text {
+        text-align: center;
+        font-size: 1rem;
+        color: gray;
+        margin-top: 10px;
+    }
+
+    .hidden-message {
+        text-align: center;
+        font-size: 1rem;
+        color: gray;
+        margin-top: 10px;
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .profile-card {
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .profile-card .greeting {
+            font-size: 1.5rem;
+        }
+
+        .profile-card .card-text {
+            font-size: 1rem;
+        }
+
+        body {
+            background-size: 250px;
+        }
+    }
+
+    @media (min-width: 1366px) {
+        body {
+            background-size: 950px;
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="card profile-card">
+        <a href="{% url 'change_data' user_profile.user.username %}" class="text-warning edit-icon">
+            <i class="fas fa-wrench"></i>
+        </a>
+        <div class="card-body">
+            <a href="{% url 'queue' %}" class="text-primary back-icon">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div class="greeting">Здравствуйте, {{ user_profile.user.first_name }}!</div>
+            <div class="info-box">
+                <h5>Информация о консультанте</h5>
+                <div class="card-text table-number">
+                    <strong>Номер стола:</strong>
+                    <span class="badge bg-primary">{{ user_profile.table_number }}</span>
+                </div>
+            </div>
+            <div class="info-box">
+                <h5>История заявок</h5>
+                <ul id="ticket-list" class="ticket-list">
+                    {% for ticket in tickets %}
+                    <li>
+                        <span>Заявка {{ ticket.number }}</span>
+                        <span class="status">{{ ticket.get_status_display }}
+                            ({{ ticket.created_at|date:"H:i d.m.Y"}})</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="hidden-message" id="hidden-message">История заявок скрыта</div>
+                <div class="buttons-container">
+                    <button id="load-more-btn" class="load-more-btn" data-page="1">Загрузить еще</button>
+                    <button id="toggle-all-btn" class="toggle-all-btn" data-expanded="false">Открыть все</button>
+                </div>
+                <div class="summary-text">Итоговое количество обслуженных талонов: {{ served_ticket_count }}</div>
+
+            </div>
+            <div class="info-box">
+                <p class="card-text">Последний Вход: {% formatted_time user_profile.user.last_login %}</p>
+                <p class="card-text">Дата Регистрации: {% formatted_time user_profile.user.date_joined %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/edit_profile_button.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const toggleAllBtn = document.getElementById('toggle-all-btn');
+        const ticketList = document.getElementById('ticket-list');
+        const hiddenMessage = document.getElementById('hidden-message');
+
+        loadMoreBtn.addEventListener('click', function () {
+            const page = this.getAttribute('data-page');
+            fetch(`{% url 'load_more_tickets' user_profile.user.username %}?page=${parseInt(page) + 1}`)
+                .then(response => response.json())
+                .then(data => {
+                    this.setAttribute('data-page', parseInt(page) + 1);
+                    data.tickets.forEach(ticket => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<span>Заявка ${ticket.number}</span><span class="status">${ticket.status} (${ticket.created_at})</span>`;
+                        ticketList.appendChild(li);
+                    });
+                    if (!data.has_more) {
+                        this.style.display = 'none';
+                    }
+                });
+        });
+
+        toggleAllBtn.addEventListener('click', function () {
+            const expanded = this.getAttribute('data-expanded') === 'true';
+            if (expanded) {
+                ticketList.innerHTML = '';
+                loadMoreBtn.setAttribute('data-page', 1);
+                loadMoreBtn.style.display = 'inline-block';
+                hiddenMessage.style.display = 'block';
+                this.textContent = 'Открыть все';
+                this.setAttribute('data-expanded', 'false');
+            } else {
+                hiddenMessage.style.display = 'none';
+                let page = 1;
+                const fetchAllPages = () => {
+                    fetch(`{% url 'load_more_tickets' user_profile.user.username %}?page=${page}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            data.tickets.forEach(ticket => {
+                                const li = document.createElement('li');
+                                li.innerHTML = `<span>Заявка ${ticket.number}</span><span class="status">${ticket.status} (${ticket.created_at})</span>`;
+                                ticketList.appendChild(li);
+                            });
+                            if (data.has_more) {
+                                page += 1;
+                                fetchAllPages();
+                            } else {
+                                loadMoreBtn.style.display = 'none';
+                                toggleAllBtn.textContent = 'Скрыть все';
+                                toggleAllBtn.setAttribute('data-expanded', 'true');
+                            }
+                        });
+                };
+                fetchAllPages();
+            }
+        });
+    });
+</script>
+{% endblock main %}
