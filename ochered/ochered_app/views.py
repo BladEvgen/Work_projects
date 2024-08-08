@@ -86,7 +86,14 @@ def queue(request):
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         tickets_data = list(tickets.values("number"))
-        current_ticket_data = current_ticket.number if current_ticket else None
+        current_ticket_data = (
+            {
+                "number": current_ticket.number,
+                "start_time": current_ticket.in_progress_at.timestamp(),
+            }
+            if current_ticket
+            else None
+        )
         return JsonResponse(
             {"tickets": tickets_data, "current_ticket": current_ticket_data}
         )
