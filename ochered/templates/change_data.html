@@ -3,6 +3,37 @@
 {% load static %}
 {% block main %}
 <style>
+  body {
+    background: url("{% static 'media/Logo.svg' %}") no-repeat center center fixed;
+    background-size: 950px;
+    background-blend-mode: overlay;
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  @media (max-width: 1200px) {
+    body {
+      background-size: 800px;
+    }
+  }
+
+  @media (max-width: 992px) {
+    body {
+      background-size: 650px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    body {
+      background-size: 500px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    body {
+      background-size: 400px;
+    }
+  }
+
   .form-control:focus {
     border-color: #5cb85c;
     box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
@@ -83,7 +114,13 @@
 </style>
 
 <div class="container mt-5">
-  <h2 class="mb-4">Update Profile</h2>
+  <div>
+    <h2 class="mb-4"><a href="{% url 'profile' username=request.user.username %}" class="text-primary back-icon">
+        <i class="fa-solid fa-arrow-left"></i></a>
+      Обновление данных
+    </h2>
+
+  </div>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
@@ -119,7 +156,7 @@
       <small id="confirmPasswordHelp" class="form-text error-message"></small>
     </div>
 
-    <button type="submit" id="registerBtn" class="btn btn-primary" disabled>Update</button>
+    <button type="submit" id="registerBtn" class="btn btn-primary" disabled>Обновить данные</button>
   </form>
 </div>
 <script src="{% static 'js/validate_password.js' %}"></script>
