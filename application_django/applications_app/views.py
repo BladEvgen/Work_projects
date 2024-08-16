@@ -160,16 +160,12 @@ def enrich_student_data(data: dict) -> dict:
         if (
             enroll_order_date.year == 2020
             and enroll_order_date.month == 11
-            and age_at_enroll > 17
+            and age_at_enroll >= 18
         ):
-            # Если студент старше 17 или 18 лет и зачислен в ноябре 2020 года, 
-            # предположим, что он начал обучение раньше.
-            start_year = birth_date.year + 17
+            # Если студент старше или равен 18 годам и зачислен в ноябре 2020 года, 
+            # предполагаем, что он начал обучение в 2019 году.
+            start_year = enroll_order_date.year - 1
         else:
-            start_year = enroll_order_date.year
-
-        # Проверка на студентов, зачисленных позже (например, в 2023 году)
-        if start_year < enroll_order_date.year:
             start_year = enroll_order_date.year
 
         profession_name = data.get("professionNameRU", "")
@@ -181,13 +177,14 @@ def enrich_student_data(data: dict) -> dict:
             **data,
             "start_year": start_year,
             "planned_graduation_year": planned_graduation_year,
-            "current_study_year_start": start_year,
-            "current_study_year_finish": start_year + 1,
+            "current_study_year_start": datetime.now().year if datetime.now().month >= 9 else datetime.now().year - 1,
+            "current_study_year_finish": (datetime.now().year if datetime.now().month >= 9 else datetime.now().year - 1) + 1,
             "finish_month_day": finish_month_day,
         }
     except Exception as e:
         logger.error(f"Ошибка в enrich_student_data: {e}")
         return None
+
 
 
 
