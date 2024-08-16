@@ -4,243 +4,7 @@
 {% load static %}
 
 {% block main %}
-<style>
-    body {
-        background: url("{% static 'media/Logo.svg' %}") no-repeat center center fixed;
-        background-size: 950px;
-        background-blend-mode: overlay;
-        background-color: rgba(255, 255, 255, 0.8);
-    }
-
-    @media (max-width: 1200px) {
-        body {
-            background-size: 800px;
-        }
-    }
-
-    @media (max-width: 992px) {
-        body {
-            background-size: 650px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        body {
-            background-size: 500px;
-        }
-    }
-
-    @media (max-width: 576px) {
-        body {
-            background-size: 400px;
-        }
-    }
-
-    .header-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: #002D72;
-        color: #fff;
-        padding: 15px 20px;
-        width: 100%;
-    }
-
-    .consultant-info {
-        display: flex;
-        align-items: center;
-    }
-
-    .consultant-info h1 {
-        font-size: 24px;
-        margin: 0;
-    }
-
-    .profile-link {
-        font-size: 16px;
-        font-weight: 600;
-        color: #50c878;
-        text-decoration: none;
-        margin-left: 15px;
-        transition: all 0.3s ease;
-    }
-
-    .profile-link:hover {
-        color: #398a54;
-        text-decoration: underline;
-    }
-
-    .waiting-h3 {
-        font-size: 20px;
-        margin: 0;
-        background-color: #FFA500;
-        padding: 5px 10px;
-        border-radius: 5px;
-        color: #fff;
-    }
-
-    .tickeTable {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 20px 0;
-        flex-wrap: wrap;
-        border-bottom: none;
-    }
-
-    .tickeTable-ticket,
-    .tickeTable-table {
-        flex: 1 1 45%;
-        margin: 10px 0;
-        font-size: 36px;
-        text-align: center;
-    }
-
-    .list-group {
-        background-color: transparent;
-        padding: 15px;
-    }
-
-    .list-group-item {
-        font-size: 24px;
-        text-align: center;
-        padding: 10px;
-        border: 1px solid #465768;
-        background-color: transparent;
-    }
-
-    .line-buttons {
-        display: flex;
-        justify-content: space-evenly;
-        align-items: center;
-        margin-top: 20px;
-        flex-wrap: wrap;
-    }
-
-    .btn {
-        padding: 10px 20px;
-        font-size: 18px;
-        margin: 5px;
-        transition: all 0.3s ease;
-    }
-
-    .btn-primary {
-        background-color: #007bff;
-        border: none;
-        color: #fff;
-    }
-
-    .btn-primary:hover {
-        background-color: #0056b3;
-    }
-
-    .btn-warning {
-        background-color: #ffc107;
-        border: none;
-        color: #212529;
-    }
-
-    .btn-warning:hover {
-        background-color: #e0a800;
-    }
-
-    .btn-logout {
-        background-color: #dc3545;
-        border: none;
-        color: #fff;
-    }
-
-    .btn-logout:hover {
-        background-color: #c82333;
-    }
-
-    .btn-statistics {
-        background-color: #6c757d;
-        border: none;
-        color: #fff;
-    }
-
-    .btn-statistics:hover {
-        background-color: #5a6268;
-    }
-
-    @media (max-width: 1200px) {
-
-        .tickeTable-ticket,
-        .tickeTable-table {
-            font-size: 30px;
-        }
-
-        .list-group-item {
-            font-size: 22px;
-        }
-
-        .btn {
-            font-size: 16px;
-            padding: 8px 16px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .header-container {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .waiting-h3 {
-            margin-top: 10px;
-        }
-
-        .tickeTable {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .tickeTable-ticket,
-        .tickeTable-table {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        .line-buttons {
-            flex-direction: column;
-        }
-
-        .btn {
-            width: 100%;
-            text-align: center;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .consultant-info h1 {
-            font-size: 20px;
-        }
-
-        .profile-link {
-            font-size: 14px;
-            margin-left: 10px;
-        }
-
-        .waiting-h3 {
-            font-size: 18px;
-        }
-
-        .tickeTable-ticket,
-        .tickeTable-table {
-            font-size: 18px;
-        }
-
-        .list-group-item {
-            font-size: 20px;
-        }
-
-        .btn {
-            font-size: 14px;
-        }
-    }
-</style>
-
+<link rel="stylesheet" href="{% static 'css/style_queue.css' %}" />
 <section class="container-fluid">
     <div class="header-container">
         <div class="consultant-info">
@@ -250,17 +14,26 @@
             <h1 class="currentConsultant">Консультант: {{ consultant.user.last_name }} {{ consultant.user.first_name }}
             </h1>
             {% endif %}
-            <a href="{% url 'profile' username=request.user.username %}" class="profile-link">Мой профиль</a>
+            <a href="{% url 'profile' username=request.user.username %}" class="profile-link">
+                Мой профиль <i class="fa-solid fa-user profile-icon"></i>
+            </a>
         </div>
         <h3 class="waiting-h3">Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
     </div>
 
     <div class="tickeTable">
-        <h2 class="tickeTable-ticket text-center" id="current-ticket">Текущий Талон: <span>
+        <h2 class="tickeTable-ticket text-center" id="current-ticket">
+            Текущий Талон: <span>
                 {% if current_ticket %}
                 {{ current_ticket.number }}
-                {% else %}----
-                {% endif %}</span></h2>
+                {% else %}
+                ----
+                {% endif %}
+            </span>
+            <div id="ticket-timer" class="timer" {% if current_ticket %}
+                data-start-time="{{ current_ticket.in_progress_at|date:'U' }}" {% endif %}>
+            </div>
+        </h2>
         <h2 class="tickeTable-table text-danger text-center">Стол <span>№{{ consultant.table_number }}</span></h2>
     </div>
 
@@ -287,13 +60,15 @@
     {% endif %}
 </section>
 
+
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
-            for (let i = 0; cookies.length; i++) {
+            for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
                 if (cookie.substring(0, name.length + 1) === (name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
@@ -302,6 +77,29 @@
             }
         }
         return cookieValue;
+    }
+
+    function updateTicketTimer() {
+        const timerElement = document.getElementById('ticket-timer');
+        if (!timerElement) return;
+
+        const startTime = parseInt(timerElement.getAttribute('data-start-time'), 10);
+        if (!startTime) return;
+
+        const now = Math.floor(Date.now() / 1000);
+        const elapsedTime = now - startTime;
+
+        const minutes = Math.floor(elapsedTime / 60);
+        const seconds = elapsedTime % 60;
+
+        timerElement.textContent = `${minutes} мин ${seconds} сек`;
+
+        if (minutes >= 25) {
+            timerElement.classList.add('blinking');
+            timerElement.innerHTML += `<div class="alert alert-custom">Время обслуживания превышает допустимое</div>`;
+        } else {
+            timerElement.classList.remove('blinking');
+        }
     }
 
     const csrftoken = getCookie('csrftoken');
@@ -322,10 +120,14 @@
             $('#current-ticket span').text(ticketNumber);
             $('#complete-ticket').removeClass('d-none');
             $('#call-next').addClass('d-none');
+            $('#ticket-timer').attr('data-start-time', Math.floor(Date.now() / 1000));
+            $('#ticket-timer').show();
         } else if (action === 'complete_ticket' && consultantId == "{{ consultant.id }}") {
             $('#current-ticket span').text('----');
             $('#complete-ticket').addClass('d-none');
             $('#call-next').removeClass('d-none');
+            $('#ticket-timer').text('');
+            $('#ticket-timer').hide();
         }
 
         if (action === 'new_ticket') {
@@ -351,12 +153,15 @@
         queueSocket.send(JSON.stringify({
             'action': 'call_next'
         }));
+        $('#ticket-timer').attr('data-start-time', Math.floor(Date.now() / 1000));
+        $('#ticket-timer').text('0 мин 0 сек');
     });
 
     $('#complete-ticket').click(function () {
         queueSocket.send(JSON.stringify({
             'action': 'complete_ticket'
         }));
+        $('#ticket-timer').hide();
     });
 
     function updateQueue() {
@@ -371,6 +176,7 @@
 
     $(document).ready(function () {
         updateQueue();
+        setInterval(updateTicketTimer, 1000);
     });
 
 </script>

@@ -2,7 +2,7 @@ from datetime import datetime
 from ochered_app import models
 
 from django.contrib import admin
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F, ExpressionWrapper, DurationField
 
 admin.site.site_header = "Панель управления"
 admin.site.index_title = "Администрирование сайта"
@@ -48,8 +48,11 @@ class TicketAdmin(admin.ModelAdmin):
     )
     search_fields = ("consultant__user__username", "consultant__table_number", "status")
     date_hierarchy = "created_at"
-    ordering = ("-created_at", "status")
-    list_filter = ("consultant",)
+    ordering = (
+        "-created_at",
+        "status",
+    )
+    list_filter = ("consultant", "status", "created_at")
 
     def get_user_username(self, obj):
         return obj.consultant.user.username if obj.consultant else None
@@ -63,6 +66,11 @@ class TicketAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
+        queryset = queryset.annotate(
+            _time_spent=ExpressionWrapper(
+                F("served_at") - F("in_progress_at"), output_field=DurationField()
+            )
+        )
         return queryset.exclude(status="test")
 
     def time_spent(self, obj):
@@ -72,6 +80,7 @@ class TicketAdmin(admin.ModelAdmin):
         return None
 
     time_spent.short_description = "Время обслуживания"
+    time_spent.admin_order_field = "_time_spent"
 
     def get_status_display(self, obj):
         return obj.get_status_display()
@@ -166,6 +175,9 @@ class AccessLogAdmin(admin.ModelAdmin):
     list_filter = ("device", "os", "browser")
     date_hierarchy = "access_time"
     actions = ["delete_all_logs"]
+    readonly_fields = ("ip", "device", "os", "browser", "route", "access_time")
+
+    list_display_links = None
 
     def delete_all_logs(self, request, queryset):
         models.AccessLog.objects.all().delete()

@@ -15,6 +15,11 @@ if DOTENV_PATH.exists():
 SECRET_KEY = os.getenv("SECRET_KEY")
 SERVER_DOMAIN_IP = os.getenv("SERVER_DOMAIN_IP")
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 МБ
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 МБ
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000000
+
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
@@ -23,6 +28,7 @@ INSTALLED_APPS = [
     "channels",
     "grappelli",
     "corsheaders",
+    "django_extensions",
     # Stadnart
     "django.contrib.admin",
     "django.contrib.auth",
