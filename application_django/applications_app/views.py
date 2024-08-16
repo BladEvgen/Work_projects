@@ -146,25 +146,19 @@ def enrich_student_data(data: dict) -> dict:
     try:
         birth_date = datetime.strptime(data["BirthDate"], "%Y-%m-%d")
         enroll_order_date = datetime.strptime(data["enroll_order_date"], "%Y-%m-%d")
-        current_year = enroll_order_date.year
 
         # Определение возраста студента на момент зачисления
-        age_at_enroll = current_year - birth_date.year
+        age_at_enroll = enroll_order_date.year - birth_date.year
         if (enroll_order_date.month < birth_date.month) or (
             enroll_order_date.month == birth_date.month
             and enroll_order_date.day < birth_date.day
         ):
             age_at_enroll -= 1
 
-        # Логика определения года начала обучения
-        if (
-            enroll_order_date.year == 2020
-            and enroll_order_date.month == 11
-            and age_at_enroll >= 18
-        ):
-            # Если студент старше или равен 18 годам и зачислен в ноябре 2020 года, 
-            # предполагаем, что он начал обучение в 2019 году.
-            start_year = enroll_order_date.year - 1
+        # Определение года начала обучения
+        if enroll_order_date.year == 2020 and enroll_order_date.month == 11 and age_at_enroll >= 18:
+            # Если студент зачислен в ноябре 2020 года, возраст 17 или старше, рассчитываем год начала обучения
+            start_year = 2020 - (age_at_enroll - 18)
         else:
             start_year = enroll_order_date.year
 
@@ -184,6 +178,7 @@ def enrich_student_data(data: dict) -> dict:
     except Exception as e:
         logger.error(f"Ошибка в enrich_student_data: {e}")
         return None
+
 
 
 
