@@ -1,0 +1,21 @@
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.bordered {
+    border: 1px solid black;
+}
+
+.center {
+    text-align: center;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.section {
+    margin-bottom: 20px;
+}
