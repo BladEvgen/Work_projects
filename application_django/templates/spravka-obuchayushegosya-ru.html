@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Справка обучающегося</title>
+    <style>
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            margin: 20px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid black;
+            padding: 1.5rem;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .header-table td {
+            vertical-align: top;
+            text-align: center;
+        }
+
+        .header-table img {
+            width: 60px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        h3 {
+            font-size: 14px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section span {
+            display: inline-block;
+            width: 150px;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .table-info {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .table-info td {
+            padding: 12px;
+            border-bottom: 1px solid black;
+            vertical-align: middle;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <table class="header-table">
+        <tr>
+            <td><img src="{% static 'logo.png' %}" alt="Logo"></td>
+            <td>
+                <h2>«ҚАЗАҚСТАН-РЕСЕЙ МЕДИЦИНАЛЫҚ УНИВЕРСИТЕТІ» МЕББМ<br>НУО «КАЗАХСТАНСКО-РОССИЙСКИЙ МЕДИЦИНСКИЙ
+                    УНИВЕРСИТЕТ»</h2>
+            </td>
+        </tr>
+    </table>
+
+    <h3>АНЫҚТАМА / СПРАВКА</h3>
+
+    <div class="section">
+        <div>Дата: {{ document.created_at }}</div>
+        <div>Номер документа: {{ document.id }}</div>
+        <div>Город: Алматы</div>
+    </div>
+
+    <div class="section">
+        <div><span class="bold">ФИО:</span> {{ student_fullname }}</div>
+        <div><span class="bold">Курс:</span> {{ student_course }}</div>
+        <div><span class="bold">Форма обучения:</span> {{ full_student_data.NameRu }}</div>
+        <div><span class="bold">Код профессии:</span> {{ full_student_data.code }}</div>
+        <div><span class="bold">Специальность:</span> {{ full_student_data.specializations }}</div>
+    </div>
+
+    <div class="section">
+        <div>Срок обучения с {{ document.created_at.year }} по {{ document.created_at.year + 1 }} гг.</div>
+    </div>
+
+    <div class="section">
+        <p>Справка выдана для предъявления по месту требования.</p>
+    </div>
+
+    <div class="footer">
+        <p>Данный документ согласно пункту 1 статьи 7 ЗРК от 7 января 2003 года №370-II «Об электронном документе и
+            электронной цифровой подписи, равнозначен документу на бумажном носителе.</p>
+    </div>
+</body>
+
+</html>
