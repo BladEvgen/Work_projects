@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Справка обучающегося</title>
+    <style>
+        @page {
+            size: A3;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 280mm;
+            height: 385mm;
+            padding: 20mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20mm;
+        }
+
+        .header img {
+            width: 100px;
+        }
+
+        .header h2 {
+            font-size: 30px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .header h3 {
+            font-size: 24px;
+            text-transform: uppercase;
+            color: #333;
+        }
+
+        .content {
+            font-size: 16px;
+            color: #333;
+            flex-grow: 1;
+            text-align: justify;
+        }
+
+        .section {
+            margin-bottom: 5%;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .underline {
+            text-decoration: underline;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .footer {
+            font-size: 14px;
+            text-align: center;
+            color: #666;
+            line-height: 1.5;
+            border-top: 1px solid #000;
+            padding-top: 10mm;
+        }
+
+        .footer p {
+            margin: 0;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="/Users/evgen/Documents/GitHub/Work_projects/application_django/static/media/Logo.svg" alt="Logo">
+            <h2>«ҚАЗАҚСТАН-РЕСЕЙ МЕДИЦИНАЛЫҚ УНИВЕРСИТЕТІ» МЕББМ<br>НУО «КАЗАХСТАНСКО-РОССИЙСКИЙ МЕДИЦИНСКИЙ
+                УНИВЕРСИТЕТ»</h2>
+            <h3>АНЫҚТАМА / СПРАВКА</h3>
+        </div>
+
+        <div class="content">
+            <div class="section center">
+                <span class="bold underline">«{{ document.created_at|date:"d.m.Y" }}»</span> № <span
+                    class="bold underline">{{ document.id }}</span>
+                <br> Алматы қаласы город Алматы
+            </div>
+
+            <div class="section">
+                Дана гражданину (ке) <span class="bold underline">{{ student_fullname }}</span><br>
+                (фамилия, имя, отчество обучающегося) в том, что он (а) действительно является обучающимся<b>
+                    Негосударственного учреждения образования «Казахстанско-Российский медицинский университет»</b>.
+            </div>
+
+            <div class="section">
+                <span class="bold underline">{{ student_course }}</span> курса, форма обучения <span
+                    class="bold underline">{{ student_data.NameRu }}</span>.<br>
+                Факультет <span class="bold underline">{{ student_data.code }}</span>
+                <span class="bold underline">{{student_data.specializations }}</span>.
+            </div>
+
+            <div class="section">
+                Справка действительна на
+                <span class="bold underline">{{ student_data.current_study_year_start }}
+                    / {{student_data.current_study_year_finish }}</span> учебный год.
+            </div>
+
+            <div class="section">
+                Срок обучения в организации образования с
+                <span class="bold underline">01.09.{{ student_data.start_year}}</span> года по
+                <span class="bold underline">
+                    {{ student_data.finish_month_day }}.{{student_data.planned_graduation_year}}
+                </span> года.
+            </div>
+
+            <div class="section">
+                Справка выдана для предъявления по месту требования.
+            </div>
+        </div>
+        <div class="footer">
+            <p><i>Данный документ согласно пункту 1 статьи 7 ЗРК от 7 января 2003 года №370-II «Об электронном документе
+                    и
+                    электронной цифровой подписи», равнозначен документу на бумажном носителе.</i></p>
+        </div>
+
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обходной лист обучающегося</title>
+    <style>
+        @font-face {
+            font-family: 'DejaVu Sans';
+            src: local('DejaVu Sans');
+        }
+
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid black;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .header-table td {
+            vertical-align: top;
+            text-align: center;
+        }
+
+        .logo {
+            width: 50px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        h3 {
+            font-size: 14px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section span {
+            display: inline-block;
+            width: 150px;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .table-info {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .table-info td {
+            padding: 12px;
+            border-bottom: 1px solid black;
+            vertical-align: middle;
+            font-size: 12px;
+        }
+
+        .table-info tr:last-child td {
+            border-bottom: 1px solid black;
+        }
+
+        .label-cell {
+            width: 65%;
+            font-weight: bold;
+        }
+
+        .input-cell {
+            width: 35%;
+            text-align: left;
+            font-size: 14px;
+            color: #000;
+        }
+
+        .input-cell:after {
+            content: "_________________________________________________________________";
+            display: block;
+            width: 100%;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table class="header-table">
+        <tr>
+            <td><img src="/Users/evgen/Documents/GitHub/Work_projects/application_django/static/media/Logo.svg"
+                    alt="Logo" class="logo"></td>
+            <td>
+                <h2>«ҚАЗАҚСТАН-РЕСЕЙ МЕДИЦИНАЛЫҚ УНИВЕРСИТЕТІ» МЕББМ<br>НУО «КАЗАХСТАНСКО-РОССИЙСКИЙ МЕДИЦИНСКИЙ
+                    УНИВЕРСИТЕТ»</h2>
+            </td>
+        </tr>
+    </table>
+
+    <h3>Білім алушының айналыс қағазы / Обходной лист обучающегося</h3>
+
+    <div class="section">
+        <div><span class="bold">Аты-жөні, әкесінің аты:</span> {{ student_fullname }}</div>
+        <div><span class="bold">Курсы / курс:</span> {{ student_course }}</div>
+        <div><span class="bold">Тобы / группа:</span> {{ student_group }}</div>
+    </div>
+
+    <table class="table-info">
+        <tr>
+            <td class="label-cell">1. Кітапхана / Библиотека:</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">2. 402-A Оқу залы / Читальный зал 402-А:</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">3. Жатақхана / Общежитие:</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td>Терлікбаева Б.Е</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">4. Бухгалтерия:</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td>Уженова С.Т</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">5. ОУСМБ СМЖБ (сауалнама өткеннен кейін) / НМКУП ОСМК (после прохождения
+                анкетирования):</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td>(8747 359 92 86)</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">6 Мансап орталығы/Центр карьеры (8707 328 92 22):</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">7. Декан:</td>
+            <td class="input-cell"></td>
+        </tr>
+        <tr>
+            <td>Вдовцев А.В</td>
+            <td class="input-cell"></td>
+        </tr>
+
+        {% for approval in approvals %}
+        <tr>
+            <td class="label-cell">{{ approval.role.name }}:</td>
+            <td class="input-cell">{{ approval.approved_by.last_name }}
+                {{ approval.approved_by.first_name }}
+                {{approval.approved_by.profile.patronymic }}</td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</body>
+
+</html>

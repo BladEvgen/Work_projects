@@ -176,3 +176,5 @@ diagram_api/templates/line_marks.html
 /ochered/chered_uvicorn.service
 ochered/static/media/qr-code.png
 /ochered/ochered_app/migrations
+/application_django/applications_app/migrations
+/application_django/static/media/generated_documents
