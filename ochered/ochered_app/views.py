@@ -23,12 +23,17 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ochered_app import models, utils
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def qr_page(request):
     try:
+        # utils.generate_qr_code()
         return render(request, "qrpage.html", context={})
     except Exception as e:
+        logger.error(f"Qr_page view: {e}")
         return HttpResponse(str(e))
 
 
@@ -78,93 +83,138 @@ def ticket_view(request, ticket_uuid):
 
 @login_required
 def queue(request):
-    consultant = models.Consultant.objects.get(user=request.user)
-    tickets = models.Ticket.objects.filter(status="waiting").order_by("number")
-    current_ticket = models.Ticket.objects.filter(
-        status="in_progress", consultant=consultant
-    ).first()
+    try:
+        consultant = models.Consultant.objects.get(user=request.user)
+        logger.info(f"Consultant {consultant} accessed the queue.")
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        tickets_data = list(tickets.values("number"))
-        current_ticket_data = (
+        tickets = models.Ticket.objects.filter(status="waiting").order_by("number")
+        current_ticket = models.Ticket.objects.filter(
+            status="in_progress", consultant=consultant
+        ).first()
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            tickets_data = list(tickets.values("number"))
+            current_ticket_data = (
+                {
+                    "number": current_ticket.number,
+                    "start_time": current_ticket.in_progress_at.timestamp(),
+                }
+                if current_ticket
+                else None
+            )
+            logger.info(f"AJAX request processed for consultant {consultant}.")
+            return JsonResponse(
+                {"tickets": tickets_data, "current_ticket": current_ticket_data}
+            )
+
+        total_waiter = models.Ticket.objects.filter(status="waiting").count()
+        logger.info(
+            f"Consultant {consultant} viewed queue with {total_waiter} waiting tickets."
+        )
+        return render(
+            request,
+            "queue.html",
             {
-                "number": current_ticket.number,
-                "start_time": current_ticket.in_progress_at.timestamp(),
-            }
-            if current_ticket
-            else None
+                "consultant": consultant,
+                "tickets": tickets,
+                "current_ticket": current_ticket,
+                "total_waiter": total_waiter,
+            },
         )
+    except Exception as e:
+        logger.error(f"An error occurred in the queue view: {e}")
         return JsonResponse(
-            {"tickets": tickets_data, "current_ticket": current_ticket_data}
+            {"error": "An error occurred while processing the request."}, status=500
         )
-    total_waiter = models.Ticket.objects.filter(status="waiting").count()
-    return render(
-        request,
-        "queue.html",
-        {
-            "consultant": consultant,
-            "tickets": tickets,
-            "current_ticket": current_ticket,
-            "total_waiter": total_waiter,
-        },
-    )
 
 
 @login_required
 def call_next(request):
-    consultant = models.Consultant.objects.get(user=request.user)
-    current_ticket = models.Ticket.objects.filter(
-        status="in_progress", consultant=consultant
-    ).first()
+    try:
+        consultant = models.Consultant.objects.get(user=request.user)
+        logger.info(f"Consultant {consultant} is calling the next ticket.")
 
-    if not current_ticket:
-        next_ticket = (
-            models.Ticket.objects.filter(status="waiting").order_by("number").first()
+        current_ticket = models.Ticket.objects.filter(
+            status="in_progress", consultant=consultant
+        ).first()
+
+        if not current_ticket:
+            next_ticket = (
+                models.Ticket.objects.filter(status="waiting")
+                .order_by("number")
+                .first()
+            )
+            if next_ticket:
+                next_ticket.status = "in_progress"
+                next_ticket.consultant = consultant
+                next_ticket.save()
+
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"queue_{consultant.id}",
+                    {
+                        "type": "update_queue",
+                        "ticket_number": next_ticket.number,
+                        "action": "call_next",
+                    },
+                )
+
+                logger.info(
+                    f"Consultant {consultant} called ticket {next_ticket.number}."
+                )
+                return JsonResponse({"ticket_number": next_ticket.number})
+            else:
+                logger.warning(
+                    f"No waiting tickets available for consultant {consultant}."
+                )
+        else:
+            logger.warning(f"Consultant {consultant} already has a ticket in progress.")
+        return JsonResponse(
+            {"error": "No waiting tickets or you already have a ticket in progress"},
+            status=400,
         )
-        if next_ticket:
-            next_ticket.status = "in_progress"
-            next_ticket.consultant = consultant
-            next_ticket.save()
+    except Exception as e:
+        logger.error(f"An error occurred in the call_next view: {e}")
+        return JsonResponse(
+            {"error": "An error occurred while processing the request."}, status=500
+        )
+
+
+@login_required
+def complete_ticket(request):
+    try:
+        consultant = models.Consultant.objects.get(user=request.user)
+        logger.info(f"Consultant {consultant} is attempting to complete a ticket.")
+
+        current_ticket = models.Ticket.objects.filter(
+            status="in_progress", consultant=consultant
+        ).first()
+        if current_ticket:
+            current_ticket.status = "served"
+            current_ticket.save()
 
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"queue_{consultant.id}",
                 {
                     "type": "update_queue",
-                    "ticket_number": next_ticket.number,
-                    "action": "call_next",
+                    "ticket_number": current_ticket.number,
+                    "action": "complete_ticket",
                 },
             )
 
-            return JsonResponse({"ticket_number": next_ticket.number})
-    return JsonResponse(
-        {"error": "No waiting tickets or you already have a ticket in progress"},
-        status=400,
-    )
-
-
-@login_required
-def complete_ticket(request):
-    consultant = models.Consultant.objects.get(user=request.user)
-    current_ticket = models.Ticket.objects.filter(
-        status="in_progress", consultant=consultant
-    ).first()
-    if current_ticket:
-        current_ticket.status = "served"
-        current_ticket.save()
-
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"queue_{consultant.id}",
-            {
-                "type": "update_queue",
-                "ticket_number": current_ticket.number,
-                "action": "complete_ticket",
-            },
+            logger.info(
+                f"Ticket {current_ticket.number} marked as served by consultant {consultant}."
+            )
+            return JsonResponse({"success": "Ticket marked as served"})
+        else:
+            logger.warning(f"No ticket in progress for consultant {consultant}.")
+        return JsonResponse({"error": "No ticket in progress"}, status=400)
+    except Exception as e:
+        logger.error(f"An error occurred in the complete_ticket view: {e}")
+        return JsonResponse(
+            {"error": "An error occurred while processing the request."}, status=500
         )
-
-        return JsonResponse({"success": "Ticket marked as served"})
-    return JsonResponse({"error": "No ticket in progress"}, status=400)
 
 
 def logout_view(request):
