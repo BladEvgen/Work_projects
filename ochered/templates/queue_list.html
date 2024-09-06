@@ -42,8 +42,8 @@
 
 
 <script>
-    const ws = new WebSocket(`ws://${window.location.host}/ws/queue/`);
-
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const ws = new WebSocket(`${wsProtocol}${window.location.host}/ws/queue/`);
     ws.onmessage = function (event) {
         const data = JSON.parse(event.data);
         const action = data.action;
