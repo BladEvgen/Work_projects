@@ -1,6 +1,6 @@
 async function fetchData() {
   const response = await fetch(
-    "http://91.185.12.100:8000/api/consultant-statistics/"
+    "https://queue.krmu.edu.kz/api/consultant-statistics/"
   );
   const data = await response.json();
   return data;
@@ -171,5 +171,5 @@ async function updateChart() {
   renderChart(data);
 }
 
-setInterval(updateChart, 3600000); //1 час 
+setInterval(updateChart, 3600000); //1 час
 updateChart();
