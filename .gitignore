@@ -178,3 +178,4 @@ ochered/static/media/qr-code.png
 /ochered/ochered_app/migrations
 /application_django/applications_app/migrations
 /application_django/static/media/generated_documents
+ochered/data.json
