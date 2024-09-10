@@ -14,16 +14,14 @@ def generate_qr_code():
         border=4,
     )
 
-    qr.add_data(server_domain_ip + "/register_ticket/")
+    qr.add_data(server_domain_ip + "/get_ticket_link/")
     qr.make(fit=True)
 
     img = qr.make_image(fill_color="black", back_color="white")
 
     min_size = 500
     if img.size[0] < min_size or img.size[1] < min_size:
-        img = img.resize(
-            (max(min_size, img.size[0]), max(min_size, img.size[1])), resample=0
-        )
+        img = img.resize((max(min_size, img.size[0]), max(min_size, img.size[1])), resample=0)
 
     media_path = settings.MEDIA_ROOT
     qr_code_path = os.path.join(media_path, "qr-code.png")
@@ -55,7 +53,5 @@ def password_check(password: str) -> bool:
         bool: True, если пароль соответствует всем требованиям сложности, в противном случае — False
     """
     return bool(
-        re.match(
-            r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$", password
-        )
+        re.match(r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$", password)
     )

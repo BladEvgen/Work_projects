@@ -1,7 +1,7 @@
 import os
 import socket
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
 
 from dotenv import load_dotenv
 
@@ -15,7 +15,6 @@ if DOTENV_PATH.exists():
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 SERVER_DOMAIN_IP = os.getenv("SERVER_DOMAIN_IP")
-
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 МБ
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 МБ
 
@@ -181,9 +180,7 @@ LOGGING = {
         "file": {
             "level": "INFO" if DEBUG else "WARNING",
             "class": "logging.FileHandler",
-            "filename": os.path.join(
-                LOG_DIR, f'log-{datetime.now().strftime("%Y-%m-%d_%H")}.log'
-            ),
+            "filename": os.path.join(LOG_DIR, f'log-{datetime.now().strftime("%Y-%m-%d_%H")}.log'),
             "formatter": "verbose",
         },
     },

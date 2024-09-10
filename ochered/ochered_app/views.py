@@ -15,6 +15,7 @@ from django.db.models import (
     DurationField,
     ExpressionWrapper,
 )
+import uuid
 from django.views import View
 from django.urls import reverse
 from django.utils import timezone
@@ -22,10 +23,16 @@ from django.utils.timezone import localtime
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from ochered_app import models, utils
 import logging
+from ochered_app import models, utils
+
 
 logger = logging.getLogger(__name__)
+
+
+def get_ticket_link(request):
+    ticket_uuid = uuid.uuid4()
+    return redirect("ticket", ticket_uuid=ticket_uuid)
 
 
 def qr_page(request):
@@ -59,7 +66,8 @@ def register_ticket(request):
     new_ticket = models.Ticket.objects.create()
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        "queue_updates", {"type": "new_ticket", "ticket_number": new_ticket.number}
+        "queue_updates",
+        {"type": "broadcast_new_ticket", "ticket_number": new_ticket.number},
     )
     return redirect("ticket", ticket_uuid=new_ticket.uuid)
 
@@ -68,10 +76,12 @@ def ticket_view(request, ticket_uuid):
     try:
         ticket = models.Ticket.objects.get(uuid=ticket_uuid)
     except models.Ticket.DoesNotExist:
-        return render(
-            request,
-            "ticket.html",
-            {"ticket": None, "is_from_subnet": request.is_from_subnet},
+        ticket = models.Ticket.objects.create(uuid=ticket_uuid)
+
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "queue_updates",
+            {"type": "broadcast_new_ticket", "ticket_number": ticket.number},
         )
 
     return render(
@@ -91,6 +101,14 @@ def queue(request):
         current_ticket = models.Ticket.objects.filter(
             status="in_progress", consultant=consultant
         ).first()
+
+        available_consultants = models.Consultant.objects.filter(
+            user__is_superuser=False, user__is_staff=False
+        ).exclude(pk=consultant.pk)
+
+        transferred_tickets = models.Ticket.objects.filter(
+            status="waiting", consultant=consultant, redirected_to__isnull=False
+        )
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             tickets_data = list(tickets.values("number"))
@@ -119,6 +137,8 @@ def queue(request):
                 "tickets": tickets,
                 "current_ticket": current_ticket,
                 "total_waiter": total_waiter,
+                "available_consultants": available_consultants,
+                "transferred_tickets": transferred_tickets,
             },
         )
     except Exception as e:

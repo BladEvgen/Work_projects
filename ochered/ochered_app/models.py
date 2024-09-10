@@ -59,6 +59,13 @@ class Ticket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     in_progress_at = models.DateTimeField(null=True, blank=True)
     served_at = models.DateTimeField(null=True, blank=True)
+    redirected_to = models.ForeignKey(
+        Consultant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="redirected_tickets",
+    )
 
     class Meta:
         verbose_name = "Талон"
