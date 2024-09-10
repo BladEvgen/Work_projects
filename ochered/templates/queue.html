@@ -73,13 +73,12 @@
 
         <!-- Перенаправление -->
         {% if current_ticket %}
-        <div class="transfer-section d-none">
+        <div class="transfer-section d-none" id="transfer-menu">
             <label for="transfer-consultant">Перенаправить талон на:</label>
             <select id="transfer-consultant" class="form-select">
                 <option value="">Выберите консультанта</option>
                 {% for consultant in available_consultants %}
-                <option value="{{ consultant.id }}">{{ consultant.user.first_name }} {{ consultant.user.last_name }}
-                </option>
+                <option value="{{ consultant.id }}">{{ consultant.user.first_name }} {{ consultant.user.last_name }}</option>
                 {% endfor %}
             </select>
             <button class="btn btn-secondary mt-2" id="transfer-ticket">Перенаправить</button>
@@ -137,7 +136,6 @@
         }
     }
 
-
     function updateTicketDisplay(ticketNumber = null) {
         const ticketElement = $('#current-ticket span');
         const timerElement = $('#ticket-timer');
@@ -157,54 +155,85 @@
         (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/queue/' + consultantId + '/'
     );
 
+    $('#transfer-ticket').click(function () {
+        const newConsultantId = $('#transfer-consultant').val();
+        const currentTicketNumber = $('#current-ticket-number').text();
+
+        if (!newConsultantId) {
+            alert("Выберите консультанта для перенаправления");
+            return;
+        }
+
+        queueSocket.send(JSON.stringify({
+            'action': 'transfer_ticket',
+            'ticket_number': currentTicketNumber,
+            'new_consultant_id': newConsultantId
+        }));
+
+        $('#transfer-menu').addClass('d-none');
+        $('#complete-ticket').addClass('d-none');
+        $('#call-next').removeClass('d-none');
+        updateTicketDisplay(null);
+    });
+
     queueSocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
         const action = data.action;
         const ticketNumber = data.ticket_number;
         const consultantId = data.consultant_id;
 
-        if (consultantId == "{{ consultant.id }}") {
-            if (action === 'call_next') {
+        if (action === 'call_next') {
+            if (consultantId == "{{ consultant.id }}") {
                 updateTicketDisplay(ticketNumber);
                 $('#complete-ticket').removeClass('d-none');
                 $('#call-next').addClass('d-none');
-            } else if (action === 'complete_ticket') {
+                $('#transfer-menu').removeClass('d-none');
+            }
+        } else if (action === 'complete_ticket') {
+            if (consultantId == "{{ consultant.id }}") {
                 updateTicketDisplay(null);
                 $('#complete-ticket').addClass('d-none');
                 $('#call-next').removeClass('d-none');
+                $('#transfer-menu').addClass('d-none');
             }
-        }
-
-        if (action === 'new_ticket') {
+        } else if (action === 'transfer_ticket') {
+            if (consultantId == "{{ consultant.id }}") {
+                updateTicketDisplay(null);
+                $('#complete-ticket').addClass('d-none');
+                $('#call-next').removeClass('d-none');
+            } else if (data.new_consultant_id == "{{ consultant.id }}") {
+                updateTicketDisplay(ticketNumber);
+                $('#complete-ticket').removeClass('d-none');
+                $('#call-next').addClass('d-none');
+                $('#transfer-menu').removeClass('d-none');
+            }
+        } else if (action === 'new_ticket') {
             $('#waiting-tickets').append('<li class="list-group-item" id="ticket-' + ticketNumber + '">Талон ' + ticketNumber + '</li>');
             $('#total-waiter').text(parseInt($('#total-waiter').text()) + 1);
         }
 
-        if (action === 'call_next' || action === 'complete_ticket' || action === 'new_ticket') {
+        if (action === 'call_next' || action === 'complete_ticket' || action === 'new_ticket' || action === 'transfer_ticket') {
             updateQueue();
         }
     };
-
-    $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
-            if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
-        }
-    });
 
     $('#call-next').click(function () {
         queueSocket.send(JSON.stringify({
             'action': 'call_next'
         }));
-        updateTicketDisplay(null);  
+
+        $('#complete-ticket').removeClass('d-none');
+        $('#call-next').addClass('d-none');
+        $('#transfer-menu').removeClass('d-none');
+
+        updateTicketDisplay(null);
     });
 
     $('#complete-ticket').click(function () {
         queueSocket.send(JSON.stringify({
             'action': 'complete_ticket'
         }));
-        updateTicketDisplay(null);  
+        updateTicketDisplay(null);
     });
 
     function updateQueue() {
@@ -222,6 +251,12 @@
         setInterval(updateTicketTimer, 1000);
     });
 
-
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
 </script>
 {% endblock %}
