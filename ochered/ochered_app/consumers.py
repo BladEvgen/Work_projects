@@ -1,10 +1,8 @@
 import json
 import asyncio
-
+from ochered_app import models
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-
-from ochered_app import models
 
 
 class QueueConsumer(AsyncWebsocketConsumer):
@@ -13,28 +11,39 @@ class QueueConsumer(AsyncWebsocketConsumer):
         self.room_group_name = (
             f"queue_{self.consultant_id}" if self.consultant_id else "queue_updates"
         )
-
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
-
         await self.channel_layer.group_add("queue_updates", self.channel_name)
-
         self.ping_task = asyncio.create_task(self.send_pings())
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
         await self.channel_layer.group_discard("queue_updates", self.channel_name)
-
         self.ping_task.cancel()
 
     async def receive(self, text_data):
         data = json.loads(text_data)
         action = data["action"]
-
         if action == "call_next":
             await self.handle_call_next()
         elif action == "complete_ticket":
             await self.handle_complete_ticket()
+        elif action == "transfer_ticket":
+            await self.handle_transfer_ticket(data)
+        elif action == "cancel_transfer":
+            await self.handle_cancel_transfer(data)
+        elif action == "new_ticket":
+            await self.handle_new_ticket(data["ticket_number"])
+
+    async def handle_new_ticket(self, ticket_number):
+        print(f"New ticket broadcast: {ticket_number}")
+        await self.channel_layer.group_send(
+            "queue_updates",
+            {
+                "type": "broadcast_new_ticket",
+                "ticket_number": ticket_number,
+            },
+        )
 
     async def handle_call_next(self):
         if self.consultant_id:
@@ -46,19 +55,29 @@ class QueueConsumer(AsyncWebsocketConsumer):
                     status="in_progress", consultant=consultant
                 ).first
             )()
-
             if not current_ticket:
                 next_ticket = await sync_to_async(
-                    models.Ticket.objects.filter(status="waiting")
+                    models.Ticket.objects.filter(
+                        status="waiting", redirected_to=consultant
+                    )
                     .order_by("number")
+                    .exclude(status="served")
                     .first
                 )()
-
+                if not next_ticket:
+                    next_ticket = await sync_to_async(
+                        models.Ticket.objects.filter(
+                            status="waiting", redirected_to__isnull=True
+                        )
+                        .order_by("number")
+                        .exclude(status="served")
+                        .first
+                    )()
                 if next_ticket:
                     next_ticket.status = "in_progress"
                     next_ticket.consultant = consultant
+                    next_ticket.redirected_to = None
                     await sync_to_async(next_ticket.save)()
-
                     await self.channel_layer.group_send(
                         "queue_updates",
                         {
@@ -79,11 +98,9 @@ class QueueConsumer(AsyncWebsocketConsumer):
                     status="in_progress", consultant=consultant
                 ).first
             )()
-
             if current_ticket:
                 current_ticket.status = "served"
                 await sync_to_async(current_ticket.save)()
-
                 await self.channel_layer.group_send(
                     "queue_updates",
                     {
@@ -93,20 +110,89 @@ class QueueConsumer(AsyncWebsocketConsumer):
                     },
                 )
 
-    async def new_ticket(self, event):
-        ticket_number = event["ticket_number"]
+    async def handle_transfer_ticket(self, data):
+        ticket_number = data.get("ticket_number")
+        new_consultant_id = data.get("new_consultant_id")
+        if ticket_number and new_consultant_id:
+            ticket = await sync_to_async(models.Ticket.objects.get)(
+                number=ticket_number
+            )
+            new_consultant = await sync_to_async(models.Consultant.objects.get)(
+                pk=new_consultant_id
+            )
+            if ticket.status != models.Ticket.STATUS_SERVED:
+                ticket.redirected_to = new_consultant
+                await sync_to_async(ticket.save)()
 
+                active_ticket = await sync_to_async(
+                    models.Ticket.objects.filter(
+                        status="in_progress", consultant=new_consultant
+                    ).exists
+                )()
+
+                if not active_ticket:
+                    ticket.status = models.Ticket.STATUS_IN_PROGRESS
+                    ticket.consultant = new_consultant
+                    ticket.redirected_to = None
+                    await sync_to_async(ticket.save)()
+
+                    await self.channel_layer.group_send(
+                        "queue_updates",
+                        {
+                            "type": "broadcast_call_next_ticket",
+                            "ticket_number": ticket.number,
+                            "consultant_id": new_consultant_id,
+                            "table_number": new_consultant.table_number,
+                        },
+                    )
+                else:
+                    await self.channel_layer.group_send(
+                        "queue_updates",
+                        {
+                            "type": "broadcast_transfer_ticket",
+                            "ticket_number": ticket.number,
+                            "new_consultant_id": new_consultant_id,
+                            "previous_consultant_id": self.consultant_id,
+                        },
+                    )
+
+                await self.channel_layer.group_send(
+                    "queue_updates",
+                    {
+                        "type": "broadcast_transfer_complete",
+                        "previous_consultant_id": self.consultant_id,
+                        "ticket_number": ticket.number,
+                    },
+                )
+
+    async def broadcast_new_ticket(self, event):
+        ticket_number = event["ticket_number"]
         await self.send(
             text_data=json.dumps(
-                {"ticket_number": ticket_number, "action": "new_ticket"}
+                {
+                    "ticket_number": ticket_number,
+                    "action": "new_ticket",
+                }
             )
         )
+
+    async def broadcast_transfer_complete(self, event):
+        previous_consultant_id = event["previous_consultant_id"]
+        ticket_number = event["ticket_number"]
+        if self.consultant_id == previous_consultant_id:
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "action": "ticket_transferred",
+                        "ticket_number": ticket_number,
+                    }
+                )
+            )
 
     async def broadcast_call_next_ticket(self, event):
         ticket_number = event["ticket_number"]
         consultant_id = event["consultant_id"]
         table_number = event["table_number"]
-
         await self.send(
             text_data=json.dumps(
                 {
@@ -121,13 +207,40 @@ class QueueConsumer(AsyncWebsocketConsumer):
     async def broadcast_complete_current_ticket(self, event):
         ticket_number = event["ticket_number"]
         consultant_id = event["consultant_id"]
-
         await self.send(
             text_data=json.dumps(
                 {
                     "ticket_number": ticket_number,
                     "consultant_id": consultant_id,
                     "action": "complete_ticket",
+                }
+            )
+        )
+
+    async def broadcast_transfer_ticket(self, event):
+        ticket_number = event["ticket_number"]
+        new_consultant_id = event["new_consultant_id"]
+        previous_consultant_id = event["previous_consultant_id"]
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "ticket_number": ticket_number,
+                    "new_consultant_id": new_consultant_id,
+                    "previous_consultant_id": previous_consultant_id,
+                    "action": "transfer_ticket",
+                }
+            )
+        )
+
+    async def broadcast_cancel_transfer(self, event):
+        ticket_number = event["ticket_number"]
+        consultant_id = event["consultant_id"]
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "ticket_number": ticket_number,
+                    "consultant_id": consultant_id,
+                    "action": "cancel_transfer",
                 }
             )
         )
