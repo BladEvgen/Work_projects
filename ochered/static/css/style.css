@@ -185,13 +185,11 @@ footer {
 }
 
 .line-buttons .btn-primary {
-  width: 210px;
-  border-radius: 5px;
+  border-radius: 7px;
 }
 
 .line-buttons .btn-warning {
-  width: 210px;
-  border-radius: 5px;
+  border-radius: 7px;
 }
 
 .h4-1 {

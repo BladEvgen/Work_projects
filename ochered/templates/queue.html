@@ -5,8 +5,10 @@
 
 {% block main %}
 <link rel="stylesheet" href="{% static 'css/style_queue.css' %}" />
+
 <section class="container-fluid">
     <div class="header-container">
+        <!-- Информация о консультанте -->
         <div class="consultant-info">
             {% if not consultant.user.first_name or not consultant.user.last_name %}
             <h1 class="currentConsultant">Консультант</h1>
@@ -18,51 +20,79 @@
                 Мой профиль <i class="fa-solid fa-user profile-icon"></i>
             </a>
         </div>
+
+        <!-- Ожидающие -->
         <h3 class="waiting-h3">Ожидающие <span id="total-waiter">{{ total_waiter }}</span></h3>
     </div>
 
     <div class="tickeTable">
+        <!-- Текущий талон -->
         <h2 class="tickeTable-ticket text-center" id="current-ticket">
-            Текущий Талон: <span>
-                {% if current_ticket %}
-                {{ current_ticket.number }}
-                {% else %}
-                ----
-                {% endif %}
+            {% if current_ticket %}
+            <span id="current-ticket-text" hidden>Текущий Талон:</span>
+            <span id="current-ticket-number">{{ current_ticket.number }}</span>
+            {% else %}
+            <span class="no-ticket">
+                <i class="fa fa-ticket"></i>
+                <span class="no-ticket-text">Нет талона</span>
             </span>
-            <div id="ticket-timer" class="timer" {% if current_ticket %}
-                data-start-time="{{ current_ticket.in_progress_at|date:'U' }}" {% endif %}>
-            </div>
+            {% endif %}
         </h2>
+
+
+        <!-- Номер стола -->
         <h2 class="tickeTable-table text-danger text-center">Стол <span>№{{ consultant.table_number }}</span></h2>
     </div>
 
+
+<span id="ticket-timer" class="timer" {% if current_ticket %}
+    data-start-time="{{ current_ticket.in_progress_at|date:'U' }}" {% endif %}>
+</span>
+
+    <!-- Список ожидающих талонов -->
     <div class="col-md-8 mx-auto">
         <ul id="waiting-tickets" class="list-group">
             {% for ticket in tickets %}
             <li class="list-group-item" id="ticket-{{ ticket.number }}">Талон {{ ticket.number }}</li>
             {% empty %}
-            <li class="list-group-item"> Нет талонов</li>
+            <li class="list-group-item">Нет талонов</li>
             {% endfor %}
         </ul>
     </div>
 
+    <!-- Управление -->
     {% if request.user.is_authenticated %}
     <div class="line-buttons">
         {% if request.user.is_staff %}
         <a href="{% url 'statistic' %}" class="btn btn-statistics">Статистика</a>
         {% endif %}
+
         <button class="btn btn-primary {% if current_ticket %}d-none{% endif %}" id="call-next">Вызвать</button>
         <button class="btn btn-warning {% if not current_ticket %}d-none{% endif %}"
             id="complete-ticket">Закончить</button>
+
+        <!-- Перенаправление -->
+        {% if current_ticket %}
+        <div class="transfer-section d-none">
+            <label for="transfer-consultant">Перенаправить талон на:</label>
+            <select id="transfer-consultant" class="form-select">
+                <option value="">Выберите консультанта</option>
+                {% for consultant in available_consultants %}
+                <option value="{{ consultant.id }}">{{ consultant.user.first_name }} {{ consultant.user.last_name }}
+                </option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-secondary mt-2" id="transfer-ticket">Перенаправить</button>
+        </div>
+        {% endif %}
+
         <a href="/logout/" class="btn btn-logout">Выйти</a>
     </div>
     {% endif %}
 </section>
 
-
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
     function getCookie(name) {
         let cookieValue = null;
@@ -84,7 +114,10 @@
         if (!timerElement) return;
 
         const startTime = parseInt(timerElement.getAttribute('data-start-time'), 10);
-        if (!startTime) return;
+        if (!startTime) {
+            console.log("Start time not found");
+            return;
+        }
 
         const now = Math.floor(Date.now() / 1000);
         const elapsedTime = now - startTime;
@@ -92,19 +125,35 @@
         const minutes = Math.floor(elapsedTime / 60);
         const seconds = elapsedTime % 60;
 
+        console.log(`Elapsed time: ${minutes} min ${seconds} sec`);
+
         timerElement.textContent = `${minutes} мин ${seconds} сек`;
 
         if (minutes >= 25) {
             timerElement.classList.add('blinking');
-            timerElement.innerHTML += `<div class="alert alert-custom">Время обслуживания превышает допустимое</div>`;
+            timerElement.innerHTML += `<span class="alert alert-custom">Время обслуживания превышает допустимое</span>`;
         } else {
             timerElement.classList.remove('blinking');
         }
     }
 
+
+    function updateTicketDisplay(ticketNumber = null) {
+        const ticketElement = $('#current-ticket span');
+        const timerElement = $('#ticket-timer');
+
+        if (ticketNumber) {
+            ticketElement.removeClass('no-ticket').text(ticketNumber);
+            timerElement.attr('data-start-time', Math.floor(Date.now() / 1000)).show();
+        } else {
+            ticketElement.addClass('no-ticket').html('<i class="fa fa-ticket"></i><span class="no-ticket-text">Нет талона</span>');
+            timerElement.text('').hide();
+        }
+    }
+
     const csrftoken = getCookie('csrftoken');
     const consultantId = "{{ consultant.id }}";
-    const queueSocket = new WebSocket(
+    let queueSocket = new WebSocket(
         (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/queue/' + consultantId + '/'
     );
 
@@ -114,24 +163,19 @@
         const ticketNumber = data.ticket_number;
         const consultantId = data.consultant_id;
 
-        console.log(`Received message: action=${action}, ticketNumber=${ticketNumber}, consultantId=${consultantId}`);
-
-        if (action === 'call_next' && consultantId == "{{ consultant.id }}") {
-            $('#current-ticket span').text(ticketNumber);
-            $('#complete-ticket').removeClass('d-none');
-            $('#call-next').addClass('d-none');
-            $('#ticket-timer').attr('data-start-time', Math.floor(Date.now() / 1000));
-            $('#ticket-timer').show();
-        } else if (action === 'complete_ticket' && consultantId == "{{ consultant.id }}") {
-            $('#current-ticket span').text('----');
-            $('#complete-ticket').addClass('d-none');
-            $('#call-next').removeClass('d-none');
-            $('#ticket-timer').text('');
-            $('#ticket-timer').hide();
+        if (consultantId == "{{ consultant.id }}") {
+            if (action === 'call_next') {
+                updateTicketDisplay(ticketNumber);
+                $('#complete-ticket').removeClass('d-none');
+                $('#call-next').addClass('d-none');
+            } else if (action === 'complete_ticket') {
+                updateTicketDisplay(null);
+                $('#complete-ticket').addClass('d-none');
+                $('#call-next').removeClass('d-none');
+            }
         }
 
         if (action === 'new_ticket') {
-            console.log(`Adding new ticket: ${ticketNumber}`);
             $('#waiting-tickets').append('<li class="list-group-item" id="ticket-' + ticketNumber + '">Талон ' + ticketNumber + '</li>');
             $('#total-waiter').text(parseInt($('#total-waiter').text()) + 1);
         }
@@ -153,15 +197,14 @@
         queueSocket.send(JSON.stringify({
             'action': 'call_next'
         }));
-        $('#ticket-timer').attr('data-start-time', Math.floor(Date.now() / 1000));
-        $('#ticket-timer').text('0 мин 0 сек');
+        updateTicketDisplay(null);  
     });
 
     $('#complete-ticket').click(function () {
         queueSocket.send(JSON.stringify({
             'action': 'complete_ticket'
         }));
-        $('#ticket-timer').hide();
+        updateTicketDisplay(null);  
     });
 
     function updateQueue() {
@@ -179,6 +222,6 @@
         setInterval(updateTicketTimer, 1000);
     });
 
-</script>
 
+</script>
 {% endblock %}
