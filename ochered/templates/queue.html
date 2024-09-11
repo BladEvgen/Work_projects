@@ -70,20 +70,23 @@
         <button class="btn btn-primary {% if current_ticket %}d-none{% endif %}" id="call-next">Вызвать</button>
         <button class="btn btn-warning {% if not current_ticket %}d-none{% endif %}"
             id="complete-ticket">Закончить</button>
+        <button class="btn btn-danger {% if not current_ticket %}d-none{% endif %}" id="no-visitor">Не подошел</button>
 
         <!-- Перенаправление -->
-        {% if current_ticket %}
+
         <div class="transfer-section d-none" id="transfer-menu">
-            <label for="transfer-consultant">Перенаправить талон на:</label>
-            <select id="transfer-consultant" class="form-select">
-                <option value="">Выберите консультанта</option>
-                {% for consultant in available_consultants %}
-                <option value="{{ consultant.id }}">{{ consultant.user.first_name }} {{ consultant.user.last_name }}</option>
-                {% endfor %}
-            </select>
-            <button class="btn btn-secondary mt-2" id="transfer-ticket">Перенаправить</button>
+            <span for="transfer-consultant">Перенаправить талон на:</span>
+            <div class="transfer-controls">
+                <select id="transfer-consultant" class="form-select">
+                    <option value="">Выберите консультанта</option>
+                    {% for consultant in available_consultants %}
+                    <option value="{{ consultant.id }}">{{ consultant.user.first_name }} {{ consultant.user.last_name }}</option>
+                    {% endfor %}
+                </select>
+            <button class="btn btn-confirm" id="transfer-ticket">Подтвердить</button>
+            </div>
         </div>
-        {% endif %}
+
 
         <a href="/logout/" class="btn btn-logout">Выйти</a>
     </div>
@@ -93,22 +96,18 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+    const getCookie = (name) => {
+        const cookies = document.cookie ? document.cookie.split(';') : [];
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(`${name}=`)) {
+                return decodeURIComponent(cookie.substring(name.length + 1));
             }
         }
-        return cookieValue;
-    }
+        return null;
+    };
 
-    function updateTicketTimer() {
+    const updateTicketTimer = () => {
         const timerElement = document.getElementById('ticket-timer');
         if (!timerElement) return;
 
@@ -134,9 +133,9 @@
         } else {
             timerElement.classList.remove('blinking');
         }
-    }
+    };
 
-    function updateTicketDisplay(ticketNumber = null) {
+    const updateTicketDisplay = (ticketNumber = null) => {
         const ticketElement = $('#current-ticket span');
         const timerElement = $('#ticket-timer');
 
@@ -147,15 +146,19 @@
             ticketElement.addClass('no-ticket').html('<i class="fa fa-ticket"></i><span class="no-ticket-text">Нет талона</span>');
             timerElement.text('').hide();
         }
-    }
+    };
 
     const csrftoken = getCookie('csrftoken');
     const consultantId = "{{ consultant.id }}";
     let queueSocket = new WebSocket(
-        (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/queue/' + consultantId + '/'
+        `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/queue/${consultantId}/`
     );
 
-    $('#transfer-ticket').click(function () {
+    const sendSocketMessage = async (action, data = {}) => {
+        queueSocket.send(JSON.stringify({ action, ...data }));
+    };
+
+    $('#transfer-ticket').on('click', async () => {
         const newConsultantId = $('#transfer-consultant').val();
         const currentTicketNumber = $('#current-ticket-number').text();
 
@@ -164,11 +167,10 @@
             return;
         }
 
-        queueSocket.send(JSON.stringify({
-            'action': 'transfer_ticket',
+        await sendSocketMessage('transfer_ticket', {
             'ticket_number': currentTicketNumber,
             'new_consultant_id': newConsultantId
-        }));
+        });
 
         $('#transfer-menu').addClass('d-none');
         $('#complete-ticket').addClass('d-none');
@@ -176,87 +178,88 @@
         updateTicketDisplay(null);
     });
 
-    queueSocket.onmessage = function (e) {
-        const data = JSON.parse(e.data);
-        const action = data.action;
-        const ticketNumber = data.ticket_number;
-        const consultantId = data.consultant_id;
+    $('#no-visitor').on('click', async () => {
+        const currentTicketNumber = $('#current-ticket-number').text();
 
-        if (action === 'call_next') {
-            if (consultantId == "{{ consultant.id }}") {
-                updateTicketDisplay(ticketNumber);
-                $('#complete-ticket').removeClass('d-none');
-                $('#call-next').addClass('d-none');
-                $('#transfer-menu').removeClass('d-none');
-            }
-        } else if (action === 'complete_ticket') {
-            if (consultantId == "{{ consultant.id }}") {
-                updateTicketDisplay(null);
-                $('#complete-ticket').addClass('d-none');
-                $('#call-next').removeClass('d-none');
-                $('#transfer-menu').addClass('d-none');
-            }
-        } else if (action === 'transfer_ticket') {
-            if (consultantId == "{{ consultant.id }}") {
-                updateTicketDisplay(null);
-                $('#complete-ticket').addClass('d-none');
-                $('#call-next').removeClass('d-none');
-            } else if (data.new_consultant_id == "{{ consultant.id }}") {
-                updateTicketDisplay(ticketNumber);
-                $('#complete-ticket').removeClass('d-none');
-                $('#call-next').addClass('d-none');
-                $('#transfer-menu').removeClass('d-none');
-            }
+        if (currentTicketNumber) {
+            await sendSocketMessage('no_visitor', {
+                'ticket_number': currentTicketNumber
+            });
+            updateTicketDisplay(null);
+        }
+
+        $('#no-visitor').addClass('d-none');
+        $('#complete-ticket').addClass('d-none');
+        $('#call-next').removeClass('d-none');
+        $('#transfer-menu').addClass('d-none');
+    });
+
+    queueSocket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        const { action, ticket_number: ticketNumber, consultant_id: consultantId } = data;
+
+        if (action === 'call_next' && consultantId == "{{ consultant.id }}") {
+            updateTicketDisplay(ticketNumber);
+            $('#complete-ticket').removeClass('d-none');
+            $('#no-visitor').removeClass('d-none');
+            $('#call-next').addClass('d-none');
+            $('#transfer-menu').removeClass('d-none');
+        } else if (action === 'complete_ticket' && consultantId == "{{ consultant.id }}") {
+            updateTicketDisplay(null);
+            $('#complete-ticket').addClass('d-none');
+            $('#no-visitor').addClass('d-none');
+            $('#call-next').removeClass('d-none');
+            $('#transfer-menu').addClass('d-none');
+        } else if (action === 'no_visitor') {
+            updateTicketDisplay(null);
+            $('#complete-ticket').addClass('d-none');
+            $('#no-visitor').addClass('d-none');
+            $('#call-next').removeClass('d-none');
+            $('#transfer-menu').addClass('d-none');
         } else if (action === 'new_ticket') {
-            $('#waiting-tickets').append('<li class="list-group-item" id="ticket-' + ticketNumber + '">Талон ' + ticketNumber + '</li>');
+            $('#waiting-tickets').append(`<li class="list-group-item" id="ticket-${ticketNumber}">Талон ${ticketNumber}</li>`);
             $('#total-waiter').text(parseInt($('#total-waiter').text()) + 1);
         }
 
-        if (action === 'call_next' || action === 'complete_ticket' || action === 'new_ticket' || action === 'transfer_ticket') {
+        if (['call_next', 'complete_ticket', 'new_ticket', 'transfer_ticket'].includes(action)) {
             updateQueue();
         }
     };
 
-    $('#call-next').click(function () {
-        queueSocket.send(JSON.stringify({
-            'action': 'call_next'
-        }));
-
+    $('#call-next').on('click', async () => {
+        await sendSocketMessage('call_next');
         $('#complete-ticket').removeClass('d-none');
         $('#call-next').addClass('d-none');
         $('#transfer-menu').removeClass('d-none');
-
         updateTicketDisplay(null);
     });
 
-    $('#complete-ticket').click(function () {
-        queueSocket.send(JSON.stringify({
-            'action': 'complete_ticket'
-        }));
+    $('#complete-ticket').on('click', async () => {
+        await sendSocketMessage('complete_ticket');
         updateTicketDisplay(null);
     });
 
-    function updateQueue() {
-        $.getJSON('{% url "queue" %}', function (data) {
-            $('#waiting-tickets').empty();
-            $('#total-waiter').text(data.tickets.length);
-            data.tickets.forEach(function (ticket) {
-                $('#waiting-tickets').append('<li class="list-group-item" id="ticket-' + ticket.number + '">Талон ' + ticket.number + '</li>');
-            });
+    const updateQueue = async () => {
+        const data = await $.getJSON('{% url "queue" %}');
+        $('#waiting-tickets').empty();
+        $('#total-waiter').text(data.tickets.length);
+        data.tickets.forEach(ticket => {
+            $('#waiting-tickets').append(`<li class="list-group-item" id="ticket-${ticket.number}">Талон ${ticket.number}</li>`);
         });
-    }
+    };
 
-    $(document).ready(function () {
+    $(document).ready(() => {
         updateQueue();
         setInterval(updateTicketTimer, 1000);
     });
 
     $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
+        beforeSend: (xhr, settings) => {
             if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
                 xhr.setRequestHeader("X-CSRFToken", csrftoken);
             }
         }
     });
+
 </script>
 {% endblock %}
