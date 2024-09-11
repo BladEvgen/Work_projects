@@ -45,6 +45,8 @@
 
     let voicesReady = false;
     let pendingCallNext = null;
+    let speechQueue = [];  
+    let isSpeaking = false;  
 
     const createInvisibleButton = () => {
         const button = document.createElement('button');
@@ -63,7 +65,7 @@
         if (voices.length > 0) {
             voicesReady = true;
             if (pendingCallNext) {
-                simulateClickAndRead(pendingCallNext.ticketNumber, pendingCallNext.tableNumber);
+                enqueueAnnouncement(pendingCallNext.ticketNumber, pendingCallNext.tableNumber);
                 pendingCallNext = null;
             }
         }
@@ -75,16 +77,15 @@
 
     const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
     const ws = new WebSocket(`${wsProtocol}${window.location.host}/ws/queue/`);
-
+    
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        const { action, ticket_number, table_number } = data;
-
+        const { action, ticket_number, table_number, new_consultant_id } = data;
         if (action === 'call_next') {
             updateInProgress(ticket_number, table_number);
 
             if (voicesReady) {
-                playNotificationAndRead(ticket_number, table_number);
+                enqueueAnnouncement(ticket_number, table_number);
             } else {
                 pendingCallNext = { ticketNumber: ticket_number, tableNumber: table_number };
             }
@@ -94,19 +95,47 @@
             addWaiting(ticket_number);
             invisibleButton.click();
         } else if (action === 'transfer_ticket') {
-            updateTransferInProgress(ticket_number);
+            updateTransferInProgress(ticket_number, new_consultant_id);
+        }
+        else if (action === 'timeout' || action === 'no_visitor') {
+            removeInProgress(ticket_number);
+        }
+
+    };
+
+    const enqueueAnnouncement = (ticketNumber, tableNumber) => {
+        speechQueue.push({ ticketNumber, tableNumber });
+        if (!isSpeaking) {
+            processQueue();
         }
     };
 
+    const processQueue = () => {
+        if (speechQueue.length === 0) {
+            isSpeaking = false;
+            return;
+        }
+
+        const { ticketNumber, tableNumber } = speechQueue.shift();
+        isSpeaking = true;
+
+        playNotificationAndRead(ticketNumber, tableNumber).then(() => {
+            processQueue();
+        });
+    };
+
     const playNotificationAndRead = (ticketNumber, tableNumber) => {
-        notificationSound.play(); 
-        notificationSound.onended = () => {
-            simulateClickAndRead(ticketNumber, tableNumber); 
-        };
+        return new Promise((resolve) => {
+            notificationSound.play();
+            notificationSound.onended = () => {
+                simulateClickAndRead(ticketNumber, tableNumber).then(resolve);
+            };
+        });
     };
 
     const updateInProgress = (ticketNumber, tableNumber) => {
         const inProgressList = document.getElementById('in-progress-list');
+
         const previousCall = document.querySelector(`#in-progress-list li[data-ticket="${ticketNumber}"]`);
         if (previousCall) previousCall.remove();
 
@@ -114,15 +143,17 @@
         listItem.classList.add('list-group-item', 'list-group-item-danger');
         listItem.setAttribute('data-ticket', ticketNumber);
         listItem.innerHTML = `
-        № <span>${ticketNumber}</span>
-        <div> 
-            <span>Үстелге келіңіз</span> 
-            <span>Подойдите к столу</span> 
-            <span>Come to the table</span>
-        </div>
-        № <span>${tableNumber}</span>
-    `;
+            № <span>${ticketNumber}</span>
+            <div> 
+                <span>Үстелге келіңіз</span> 
+                <span>Подойдите к столу</span> 
+                <span>Come to the table</span>
+            </div>
+            № <span>${tableNumber}</span>
+        `;
+
         inProgressList.appendChild(listItem);
+
         removeWaiting(ticketNumber);
     };
 
@@ -145,33 +176,54 @@
         if (listItem) listItem.remove();
     };
 
-    const updateTransferInProgress = (ticketNumber) => {
+    const updateTransferInProgress = (ticketNumber, newConsultantId) => {
         removeWaiting(ticketNumber);
+        removeInProgress(ticketNumber);
+
+        if (newConsultantId == consultantId) {
+            const inProgressList = document.getElementById('in-progress-list');
+            const listItem = document.createElement('li');
+            listItem.classList.add('list-group-item', 'list-group-item-danger');
+            listItem.setAttribute('data-ticket', ticketNumber);
+            listItem.innerHTML = `
+                № <span>${ticketNumber}</span>
+                <div> 
+                    <span>Үстелге келіңіз</span> 
+                    <span>Подойдите к столу</span> 
+                    <span>Come to the table</span>
+                </div>
+                № <span>${newConsultantId}</span>
+            `;
+            inProgressList.appendChild(listItem);
+        }
     };
 
     const simulateClickAndRead = (ticketNumber, tableNumber) => {
-        try {
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'hiddenInput';
-            input.value = `Талон ${ticketNumber}, стол ${tableNumber}`;
-            input.style.display = 'none';
-            document.body.appendChild(input);
+        return new Promise((resolve) => {
+            try {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'hiddenInput';
+                input.value = `Талон ${ticketNumber}, стол ${tableNumber}`;
+                input.style.display = 'none';
+                document.body.appendChild(input);
 
-            const button = document.createElement('button');
-            button.style.display = 'none';
-            button.addEventListener('click', () => {
-                const text = document.getElementById('hiddenInput').value;
-                handleSpeech(ticketNumber, tableNumber);
-            });
+                const button = document.createElement('button');
+                button.style.display = 'none';
+                button.addEventListener('click', () => {
+                    const text = document.getElementById('hiddenInput').value;
+                    handleSpeech(ticketNumber, tableNumber).then(resolve);
+                });
 
-            document.body.appendChild(button);
-            button.click();
-            document.body.removeChild(button);
-            document.body.removeChild(input);
-        } catch (error) {
-            console.error('Ошибка при симуляции клика или чтении:', error);
-        }
+                document.body.appendChild(button);
+                button.click();
+                document.body.removeChild(button);
+                document.body.removeChild(input);
+            } catch (error) {
+                console.error('Ошибка при симуляции клика или чтении:', error);
+                resolve();
+            }
+        });
     };
 
     const handleSpeech = async (ticketNumber, tableNumber) => {
@@ -179,33 +231,50 @@
             const ticketNumberKz = translateNumberToKazakh(ticketNumber);
             const tableNumberKz = translateNumberToKazakh(tableNumber);
 
-            const messageKz = `№${ticketNumberKz} билет, ${tableNumberKz}-кестеге келыныз`;
+            const messageKz = `${ticketNumberKz} билет, ${tableNumberKz}-кестеге келыныз`;
             const messageRu = `Талон №${ticketNumber}, подойдите к столу ${tableNumber}`;
             const messageEn = `Ticket №${ticketNumber}, come to table ${tableNumber}`;
 
-            await speakWithAvailableVoice(messageKz, 'ru-RU', 1.0, 1.1, 1.0);
-            await speakWithAvailableVoice(messageRu, 'ru-RU', 1.1, 1.1, 1.0);
-            await speakWithAvailableVoice(messageEn, 'en-US', 1.0, 0.9, 1.3);
+            await speakWithAvailableVoice(messageKz, 'ru-RU', 1.0, 1.1, 1.0, true);
+            await speakWithAvailableVoice(messageRu, 'ru-RU', 1.1, 1.1, 1.0, false);
+            await speakWithAvailableVoice(messageEn, 'en-US', 1.0, 0.9, 1.3, false);
         } catch (error) {
             console.error('Ошибка при чтении текста:', error);
         }
     };
 
-    const speakWithAvailableVoice = (text, lang, rate, pitch, volume) => {
+    const speakWithAvailableVoice = (text, lang, rate, pitch, volume, delayForNumbers = false) => {
         return new Promise((resolve) => {
             try {
                 const voices = window.speechSynthesis.getVoices();
                 const availableVoice = voices.find(voice => voice.lang === lang) || voices[0];
 
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = lang;
-                utterance.voice = availableVoice;
-                utterance.rate = rate; // Adjust rate to make speech more natural
-                utterance.pitch = pitch; // Adjust pitch for a more human sound
-                utterance.volume = volume; // Adjust volume for softer tones
-                utterance.onend = resolve;
+                const parts = text.split(' ');
 
-                window.speechSynthesis.speak(utterance);
+                const speakPart = (index) => {
+                    if (index >= parts.length) {
+                        resolve();
+                        return;
+                    }
+
+                    const utterance = new SpeechSynthesisUtterance(parts[index]);
+                    utterance.lang = lang;
+                    utterance.voice = availableVoice;
+                    utterance.rate = rate;
+                    utterance.pitch = pitch;
+                    utterance.volume = volume;
+
+                    const isNumber = !isNaN(parseInt(parts[index], 10));
+
+                    utterance.onend = () => {
+                        const delay = (delayForNumbers && isNumber) ? 100 : 0;  
+                        setTimeout(() => speakPart(index + 1), delay);
+                    };
+
+                    window.speechSynthesis.speak(utterance);
+                };
+
+                speakPart(0);
             } catch (error) {
                 console.error(`Ошибка при попытке прочитать текст на языке ${lang}:`, error);
                 resolve();
@@ -214,9 +283,9 @@
     };
 
     const translateNumberToKazakh = (number) => {
-        const units = ["ноль", "бир", "эки", "уш", "тёрт", "бес", "алты", "жеты", "сегиз", "тогыз"];
-        const tens = ["", "он", "жийырма", "отыз", "кырык", "елу", "алпыс", "жетпис", "сексен", "токсан"];
-        const hundreds = ["", "жуз", "эки жуз", "уш жуз", "тёрт жуз", "бес жуз", "алты жуз", "жеты жуз", "сегиз жуз", "тогыз жуз"];
+        const units = ["", "быр", "еки", "уш", "тёрт", "бес", "алты", "жеты", "сегиз", "тогыз"];
+        const tens = ["", "он", "жиырма", "отыз", "кырык", "елю", "алпыс", "жетпыс", "сексен", "токсан"];
+        const hundreds = ["", "жуз", "еки жуз", "уш жуз", "тёрт жуз", "бес жуз ", "алты жуз", "жеты жуз", "сегиз жуз", "тогыз жуз"];
 
         if (number < 10) return units[number];
         if (number < 100) return `${tens[Math.floor(number / 10)]} ${units[number % 10]}`.trim();
@@ -228,10 +297,7 @@
         const remainder = number % 1000;
         return `${translateNumberToKazakh(thousands)} мын ${translateNumberToKazakh(remainder)}`.trim();
     };
-
-
 </script>
-
 
 
 
