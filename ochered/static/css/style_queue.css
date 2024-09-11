@@ -60,7 +60,6 @@ body {
     font-size: 20vh;
 }
 
-
 /* ============================== Ожидающие ============================== */
 .waiting-h3 {
     background-color: #ffcc00;
@@ -75,7 +74,6 @@ body {
     font-size: 1.5rem;
 }
 
-/* Стиль для отсутствующего талона */
 span.no-ticket {
     display: inline-flex;
     align-items: center;
@@ -83,7 +81,6 @@ span.no-ticket {
     color: #6c757d;
     font-size: 2rem;
     margin-top: 6vh;
-    /* Базовое значение для десктопов */
 }
 
 span.no-ticket i {
@@ -97,19 +94,13 @@ span.no-ticket i::after {
     content: '';
     position: absolute;
     top: 50%;
-    /* Центр по вертикали */
     left: 50%;
-    /* Центр по горизонтали */
     width: 150%;
-    /* Немного увеличиваем ширину для перекрытия */
     height: 4px;
-    /* Увеличиваем толщину линии */
     background-color: #DC4C64;
     transform: translate(-50%, -50%) rotate(-45deg);
-    /* Центрируем и поворачиваем */
 }
 
-/* Текст "Нет талона" */
 span.no-ticket-text {
     margin-left: 10px;
     font-size: 3.5rem;
@@ -127,42 +118,110 @@ span.no-ticket-text {
     padding: 10px 0;
 }
 
+/* ============================== Контейнер для перенаправления ============================== */
+.transfer-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+    justify-content: flex-start;
+}
+
+.transfer-controls span {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #212529;
+    margin-right: 5px;
+    line-height: 1.5rem;
+}
+
 /* ============================== Кнопки ============================== */
 .line-buttons {
     position: fixed;
     bottom: 0;
     left: 0;
     background-color: #f8f9fa;
-    padding: 15px 20px;
+    padding: 10px 10px;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
     z-index: 999;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
+    max-width: 100%;
+    border-top: 1px solid #ccc;
 }
 
 .btn {
-    padding: 12px 24px;
-    font-size: 1.1rem;
+    padding: 10px 16px;
+    font-size: 1rem;
     border-radius: 8px;
+    margin-top: 5px;
 }
 
-.btn-primary {
-    background-color: #007bff;
-    border: none;
+.btn,
+.btn-secondary,
+.btn-confirm,
+.btn-logout,
+#transfer-consultant {
+    margin-top: 5px;
+}
+
+#transfer-consultant {
+    font-size: 1rem;
+    margin-top: 0;
+    width: 240px;
 }
 
 .btn-warning {
     background-color: #ffc107;
     color: #212529;
+    margin-right: 10px;
+}
+
+.btn-warning:hover {
+    background-color: #ffae00;
+    color: #212529;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 8px;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: white;
+}
+
+.btn-confirm {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 8px;
+}
+
+.btn-confirm:hover {
+    background-color: #218838;
+    color: white;
 }
 
 .btn-logout {
     background-color: #dc3545;
     color: white;
+    width: auto;
+    margin-left: 10px;
+}
+
+.btn-logout:hover {
+    background-color: #b61b2a;
+    color: white;
 }
 
 .btn-statistics {
-    background-color: #6c757d;
+    background-color: #568cbb;
     color: white;
     border: none;
     position: relative;
@@ -181,7 +240,7 @@ span.no-ticket-text {
 }
 
 .btn-statistics:hover {
-    background-color: #5a6268;
+    background-color: #9dd4ff;
 }
 
 /* ============================== Медиа-запросы ============================== */
@@ -192,75 +251,115 @@ span.no-ticket-text {
         background-size: 300px;
     }
 
-    .tickeTable-ticket span,
-    .tickeTable-table span {
-        font-size: 10vh;
+    .line-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px 15px;
+        justify-content: space-between;
+    }
+
+    .btn {
+        font-size: 1rem;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .btn-logout {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .transfer-controls {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    #transfer-consultant {
+        width: 100%;
+    }
+
+    .btn-secondary,
+    .btn-warning,
+    .btn-confirm {
+        width: 100%;
+    }
+}
+
+/* Для планшетов */
+@media (min-width: 577px) and (max-width: 1024px) {
+    .line-buttons {
+        justify-content: space-around;
     }
 
     .btn {
         font-size: 1rem;
     }
 
-    .waiting-h3 span {
-        font-size: 1rem;
+    .btn-logout {
+        margin-left: 0;
+        width: auto;
     }
 
-    .no-ticket {
-        margin-top: 15vh;
+    .transfer-controls {
+        flex-direction: row;
+        justify-content: space-around;
+        gap: 10px;
+    }
+
+    #transfer-consultant {
+        width: 100%;
+    }
+
+    .btn-secondary,
+    .btn-warning,
+    .btn-confirm {
+        width: auto;
     }
 }
 
-/* Планшеты */
-@media (min-width: 768px) and (max-width: 1024px) {
-
-    .tickeTable-ticket span,
-    .tickeTable-table span {
-        font-size: 15vh;
-    }
-
-    .no-ticket {
-        margin-top: 10vh;
-    }
-}
-
-/* Для разрешения 1366x768 */
+/* Для ноутбуков и десктопов */
 @media (min-width: 1025px) and (max-width: 1366px) {
     span.no-ticket {
-        margin-top: 7vh;
-        font-size: 2.8rem;
+            margin-top: 7vh;
+            font-size: 2.8rem;
     }
-
     span.no-ticket i {
         font-size: 3rem;
     }
-
     span.no-ticket-text {
         font-size: 3rem;
         margin-top: 6vh;
-        margin-bottom: 42px;
+        margin-bottom: 29px;
     }
 
-    .profile-link {
-        font-size: 1.3rem;
+    .line-buttons {
+        justify-content: space-between;
     }
 
-    .currentConsultant {
-        font-size: 2rem;
+    .transfer-controls {
+        gap: 15px;
     }
 
-    .waiting-h3 {
-        font-size: 1rem;
+    #transfer-consultant {
+        width: auto;
     }
 
-    #total-waiter {
-        font-size: 1.5rem;
+    .btn-secondary,
+    .btn-confirm {
+        width: auto;
+    }
+
+    .btn {
+        font-size: 1.2rem;
     }
 }
 
-/* Для разрешения 1920x1080 */
+/* Для экранов с высоким разрешением */
 @media (min-width: 1366px) and (max-width: 1920px) {
     span.no-ticket {
-        margin-top: 10vh;
+        margin-top: 6vh;
         font-size: 3rem;
     }
 
@@ -274,9 +373,29 @@ span.no-ticket-text {
         margin-top: 3.3vh;
         margin-bottom: 49px;
     }
+    .line-buttons {
+        justify-content: space-between;
+    }
+
+    .btn {
+        font-size: 1.2rem;
+    }
+
+    .transfer-controls {
+        gap: 15px;
+    }
+
+    #transfer-consultant {
+        width: auto;
+    }
+
+    .btn-secondary,
+    .btn-confirm {
+        width: auto;
+    }
 }
 
-/* Для разрешения 2560x1440 */
+/* Для очень больших экранов */
 @media (min-width: 1921px) and (max-width: 2560px) {
     span.no-ticket {
         margin-top: 5.8vh;
@@ -285,16 +404,37 @@ span.no-ticket-text {
 
     span.no-ticket i {
         font-size: 5rem;
+        margin-top: 5vh;
     }
 
     span.no-ticket-text {
         font-size: 7rem;
-        margin-top: 3vh;
-        margin-bottom: 23px;
+        margin-top: 7vh;
+        margin-bottom: 29px;
+    }
+    .line-buttons {
+        justify-content: space-between;
+    }
+
+    .btn {
+        font-size: 1.3rem;
+    }
+
+    .transfer-controls {
+        gap: 20px;
+    }
+
+    #transfer-consultant {
+        width: auto;
+    }
+
+    .btn-secondary,
+    .btn-confirm {
+        width: auto;
     }
 }
 
-/* Для разрешения 3440x1440 */
+/* Для сверхшироких экранов */
 @media (min-width: 2561px) and (max-width: 3440px) {
     span.no-ticket {
         margin-top: 1vh;
@@ -303,34 +443,66 @@ span.no-ticket-text {
 
     span.no-ticket i {
         font-size: 4.5rem;
-        margin-top: 5.5rem;
+        margin-top: 4.5rem;
     }
 
     span.no-ticket-text {
-        font-size: 4.5rem;
-        margin-top: 12vh;
+        font-size: 7.5rem;
+        margin-top: 9vh;
         margin-bottom: 60px;
     }
-}
-
-/* Для разрешения 3840x2160 (4K) */
-@media (min-width: 3441px) and (max-width: 3840px) {
-    span.no-ticket {
-        margin-top: 12vh;
+    
+    .list-group-item{
         font-size: 5rem;
     }
-
-    span.no-ticket i {
-        font-size: 9rem;
-        margin-bottom: 33px;
+    .line-buttons {
+        justify-content: space-between;
     }
 
-    span.no-ticket-text {
-        font-size: 12rem;
-        margin-top: 0vh;
-        margin-bottom: 38px;
+    .btn {
+        font-size: 1.4rem;
+    }
+
+    .transfer-controls {
+        gap: 25px;
+    }
+
+    #transfer-consultant {
+        width: auto;
+    }
+
+    .btn-secondary,
+    .btn-confirm {
+        width: auto;
+    }
+
+}
+
+/* Для 4K разрешений */
+@media (min-width: 3441px) and (max-width: 3840px) {
+    .line-buttons {
+        justify-content: space-between;
+    }
+
+    .btn {
+        font-size: 1.5rem;
+    }
+
+    .transfer-controls {
+        gap: 30px;
+    }
+
+    #transfer-consultant {
+        width: auto;
+    }
+
+    .btn-secondary,
+    .btn-confirm {
+        width: auto;
     }
 }
+
+/* ============================== Таймер ============================== */
 #ticket-timer {
     font-size: 1.2rem;
     font-weight: bold;
@@ -340,6 +512,7 @@ span.no-ticket-text {
     display: block;
 }
 
+/* ============================== Оповещения ============================== */
 .alert-custom {
     background-color: #ffbf00;
     color: #856404;
@@ -355,10 +528,13 @@ span.no-ticket-text {
     margin-right: auto;
 }
 
+/* ============================== Анимация мигания ============================== */
 .blinking {
     animation: blink-animation 1s infinite;
 }
 
 @keyframes blink-animation {
-    50% { opacity: 0; }
+    50% {
+        opacity: 0;
+    }
 }
