@@ -404,13 +404,13 @@ span.no-ticket-text {
 
     span.no-ticket i {
         font-size: 5rem;
-        margin-top: 5vh;
+        margin-top: -1vh;
     }
 
     span.no-ticket-text {
         font-size: 7rem;
-        margin-top: 7vh;
-        margin-bottom: 29px;
+        margin-top: 2vh;
+        margin-bottom: 32px;
     }
     .line-buttons {
         justify-content: space-between;
