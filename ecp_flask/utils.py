@@ -21,13 +21,13 @@ import logger
 logger = logging.getLogger(__name__)
 
 
-
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
-    
+
 
 HOST_URL = "https://ecp.medkrmu.kz/"
+
 
 db_connection_certificate = mysql.connector.connect(
     host=os.getenv("DB_HOST"),
@@ -102,8 +102,10 @@ def update_signed_status(filenames):
         logger.warning("No filenames provided for status update.")
         return
 
-    placeholders = ', '.join(['%s'] * len(filenames))
-    update_query = f"UPDATE certificate SET signed_status = 2 WHERE filename IN ({placeholders})"
+    placeholders = ", ".join(["%s"] * len(filenames))
+    update_query = (
+        f"UPDATE certificate SET signed_status = 2 WHERE filename IN ({placeholders})"
+    )
 
     try:
         with db_connection_certificate.cursor() as cursor:
@@ -174,7 +176,7 @@ def sign_file_gos(key: str, password: str, file: Union[str, bytes]) -> tuple:
     decoded_file_path = None
     try:
         base64_key_string = get_base_64_key_string(key)
-        
+
         if isinstance(file, bytes):
             encoded_file = base64.b64encode(file).decode("utf-8")
             original_file_name = "processed_pdf.pdf"
@@ -185,7 +187,7 @@ def sign_file_gos(key: str, password: str, file: Union[str, bytes]) -> tuple:
             original_file_name = os.path.basename(file)
         else:
             raise ValueError("file parameter must be a filename (str) or bytes data")
-        
+
         data = {
             "data": encoded_file,
             "signers": [
@@ -195,7 +197,7 @@ def sign_file_gos(key: str, password: str, file: Union[str, bytes]) -> tuple:
             "tsaPolicy": "TSA_GOST_POLICY",
             "detached": False,
         }
-        
+
         response = requests.post("http://localhost:14579/cms/sign", json=data)
         response.raise_for_status()
         response_data = response.json()

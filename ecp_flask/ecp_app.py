@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 CORS(app)
+
 HOST_URL = "https://ecp.medkrmu.kz/"
 
 app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")
@@ -80,6 +81,10 @@ def sign_file():
     password = request.form.get("password")
     package = request.form.get("package")
 
+    logger.info(
+        f"Received form data - Key files: {key_files}, Password: {'*' * len(password) if password else None}, Package: {package}"
+    )
+
     if not key_files or not key_files[0]:
         logger.error("Key file is missing")
         return jsonify({"error": "Key file is missing"}), 400
@@ -89,33 +94,43 @@ def sign_file():
         return jsonify({"error": "Password is missing"}), 400
 
     key_path = os.path.join(app.config["UPLOAD_FOLDER"], key_files[0].filename)
+    logger.info(f"Saving key file to: {key_path}")
     key_files[0].save(key_path)
 
     file_paths = []
 
     if package:
-        directory = f"/var/www/kirill/certificates.medkrmu/cert_date_base/{package}/pdf/"
+        logger.info(f"Package for path: {package}")
+
+        directory = (
+            f"/var/www/kirill/certificates.medkrmu/cert_date_base/{package}/pdf/"
+        )
         signed_folder = directory
+        logger.info(f"Looking for files in directory {directory}")
         os.makedirs(directory, exist_ok=True)
 
         for filename in os.listdir(directory):
             if filename.endswith(".pdf"):
                 file_path = os.path.join(directory, filename)
                 file_paths.append(file_path)
+                logger.info(f"Found file to sign: {file_path}")
 
         if not file_paths:
             logger.error("No files to sign in the package directory")
             if os.path.exists(key_path):
                 os.remove(key_path)
+                logger.info(f"Removed key file: {key_path}")
             return jsonify({"error": "No files to sign in the package"}), 400
 
     else:
         files = request.files.getlist("file")
         signed_folder = os.path.join(app.root_path, "signed")
+        logger.info(f"Manual file mode: Saving signed files to {signed_folder}")
         os.makedirs(signed_folder, exist_ok=True)
 
         for file in files:
             file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+            logger.info(f"Saving file to: {file_path}")
             file.save(file_path)
             file_paths.append(file_path)
 
@@ -123,14 +138,17 @@ def sign_file():
         logger.error("No files to sign")
         if os.path.exists(key_path):
             os.remove(key_path)
+            logger.info(f"Removed key file: {key_path}")
         return jsonify({"error": "No files to sign"}), 400
 
+    logger.info(f"Starting signing process for files: {file_paths}")
+
     task = celery.send_task(
-        'celery_worker.async_sign_file',
+        "celery_worker.async_sign_file",
         args=[key_path, password, file_paths, package, signed_folder],
     )
 
-    logger.info("Task for signing files started with task ID: %s", task.id)
+    logger.info(f"Task for signing files started with task ID: {task.id}")
 
     return jsonify({"message": "Signing process started", "task_id": task.id}), 202
 
@@ -140,21 +158,21 @@ def get_task_status(task_id):
     task = celery.AsyncResult(task_id)
 
     response = {
-        'task_id': task_id,
+        "task_id": task_id,
     }
 
-    if task.state == 'PENDING':
-        response['status'] = 'Pending'
+    if task.state == "PENDING":
+        response["status"] = "Pending"
 
-    elif task.state == 'SUCCESS':
-        response['status'] = 'Success'
+    elif task.state == "SUCCESS":
+        response["status"] = "Success"
 
-    elif task.state == 'FAILURE':
-        response['status'] = 'Error'
-        response['error'] = str(task.info)
+    elif task.state == "FAILURE":
+        response["status"] = "Error"
+        response["error"] = str(task.info)
 
     else:
-        response['status'] = task.state
+        response["status"] = task.state
 
     return jsonify(response)
 
@@ -178,7 +196,9 @@ def verify_data():
         data_to_verify = base64.b64encode(f.read()).decode("utf-8")
 
     url = "http://localhost:14579/cms/verify"
-    response = requests.post(url, json={"revocationCheck": ["OCSP"], "cms": data_to_verify})
+    response = requests.post(
+        url, json={"revocationCheck": ["OCSP"], "cms": data_to_verify}
+    )
     return jsonify(response.json())
 
 
@@ -186,4 +206,4 @@ initialize_database()
 
 if __name__ == "__main__":
     initialize_database()
-    app.run(host="0.0.0.0", debug=app.config['DEBUG'])
+    app.run(host="0.0.0.0", port="5002", debug=app.config["DEBUG"])
