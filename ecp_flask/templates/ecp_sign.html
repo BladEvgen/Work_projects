@@ -5,217 +5,302 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Подписание файла</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='dist/css/output.css') }}">
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.css') }}" />
+  <!-- Animate.css для анимаций -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
   <style>
-    :root {
-      --progress-bar-color: #cfd8dc;
-      --progress-value-color: #2196f3;
-      --progress-empty-color-h: 4.1;
-      --progress-empty-color-s: 89.6;
-      --progress-empty-color-l: 58.4;
-      --progress-filled-color-h: 122.4;
-      --progress-filled-color-s: 39.4;
-      --progress-filled-color-l: 49.2;
-    }
-  
-    progress {
-      width: 100%;
-      height: 20px;
-      border-radius: 10px;
-      overflow: hidden;
+    /* Общие стили */
+    .alert-container,
+    .success-container {
+      animation: fadeIn 0.5s ease-in-out, fadeOut 0.5s ease-in-out 9.5s forwards;
     }
 
-    progress::-webkit-progress-bar {
-      background-color: #cfd8dc;
-      border-radius: 10px;
-    }
-
-    progress::-webkit-progress-value {
-      background-color: #2196f3;
-      border-radius: 10px;
-    }
-
-    progress::-moz-progress-bar {
-      background-color: #2196f3;
-      border-radius: 10px;
-    }
-  
-    .password-toggle {
-      position: relative;
-    }
-  
-    .toggle-password {
-      position: absolute;
-      top: 65%;
-      right: 10px;
-      transform: translateY(-50%);
-      cursor: pointer;
-    }
-  
-    .file-drop-area {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      border: 2px dashed #4a5568;
-      border-radius: 0.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #2d3748;
-      transition: background-color 0.3s ease;
-    }
-  
-    .file-drop-area:hover {
-      background-color: #4a5568;
-    }
-  
-    .file-drop-area .file-msg {
-      text-align: center;
-    }
-  
-    .file-drop-area .file-input {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-    }
-  
-    .alert-container {
-      animation: fadeIn 0.5s ease-in-out, fadeOut 0.5s ease-in-out 3s forwards;
-    }
-  
     @keyframes fadeIn {
       from {
         opacity: 0;
+        transform: translateY(-20px);
       }
-  
+
       to {
         opacity: 1;
+        transform: translateY(0);
       }
     }
-  
+
     @keyframes fadeOut {
       from {
         opacity: 1;
+        transform: translateY(0);
       }
-  
+
       to {
         opacity: 0;
+        transform: translateY(-20px);
       }
     }
-  .hidden {
-    display: none;
-  }
 
+    .package-option:hover {
+      background-color: #7c3aed !important;
+    }
+
+    .package-option {
+      cursor: pointer;
+    }
+
+    .btn {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .smooth-transition {
+      transition: all 0.3s ease-in-out;
+    }
+
+    .input-icon {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+      color: #a0aec0;
+    }
+
+    .input-with-icon {
+      padding-left: 40px;
+      /* Увеличено для иконки поиска */
+    }
+
+    .toggle-password-container {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      cursor: pointer;
+      color: #a0aec0;
+    }
+
+    #searchInput {
+      padding-left: 40px;
+    }
+
+    .search-icon {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+      color: #a0aec0;
+    }
+
+    .alert-container,
+    .success-container {
+      display: none;
+    }
+
+    .alert-container.show,
+    .success-container.show {
+      display: flex;
+    }
+
+    /* Кастомный прогресс-бар */
+    .custom-progress-container {
+      width: 100%;
+      max-width: 400px;
+      height: 30px;
+      background: #374151;
+      /* Темно-серый фон */
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .custom-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4ade80, #22c55e);
+      /* Градиент зелёного цвета */
+      position: relative;
+      transition: width 1s ease-in-out;
+    }
+
+    /* Анимация волн */
+    .wave {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 200%;
+      height: 100%;
+      background-repeat: repeat-x;
+      background-size: 50% 100%;
+      opacity: 0.5;
+      animation: wave 4s linear infinite;
+      background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.3) 10%, transparent 10%);
+    }
+
+    @keyframes wave {
+      from {
+        transform: translateX(0);
+      }
+
+      to {
+        transform: translateX(-50%);
+      }
+    }
+
+    /* Текст прогресса */
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 14px;
+      font-weight: bold;
+      color: #ffffff;
+      pointer-events: none;
+    }
   </style>
 </head>
 
-<body class="bg-gray-900 text-white">
-  <div class="form-container max-w-2xl mx-auto mt-10 px-4 py-8 bg-gray-800 rounded-lg shadow-lg">
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+  <div
+    class="form-container max-w-2xl w-full mx-4 px-6 py-8 bg-gray-800 rounded-lg shadow-lg animate__animated animate__fadeIn">
     <form id="fileForm" enctype="multipart/form-data" class="flex flex-col items-center space-y-6">
-      <!-- Dropdown Menu for Packages -->
-      <div class="w-full max-w-md relative">
+      <!-- Заголовок -->
+      <h2 class="text-3xl font-bold mb-6 text-center text-purple-400 animate__animated animate__pulse">Подписание файлов
+      </h2>
+
+      <!-- Информационный блок -->
+      <div class="w-full bg-gray-700 p-4 rounded-lg shadow-inner animate__animated animate__fadeInDown">
+        <p class="text-sm text-gray-300">
+          Пожалуйста, выберите пакет сертификатов или загрузите PDF-файл для подписи. Затем выберите файл ЭЦП и введите
+          пароль.
+        </p>
+      </div>
+
+      <!-- Dropdown Menu для выбора пакета сертификатов -->
+      <div class="w-full relative">
         <div id="dropdownMenuButton"
-          class="inline-flex items-center w-full px-4 py-2 bg-gray-800 text-white rounded-md cursor-pointer hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-500">
-          <span class="truncate">Пакет сертификатов</span>
-          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          class="inline-flex items-center justify-between w-full px-4 py-3 bg-gray-700 text-white rounded-md cursor-pointer hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-blue-500 transition duration-200 animate__animated animate__fadeIn">
+          <span class="truncate">Выберите пакет сертификатов</span>
+          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-6-6-6 6"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
           </svg>
         </div>
         <div id="dropdownMenu"
-          class="hidden absolute z-10 w-full max-w-md mt-1 overflow-hidden rounded-md shadow-lg bg-gray-800">
-          <div class="flex items-center px-3 py-2">
+          class="hidden absolute z-10 w-full mt-1 bg-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto animate__animated">
+          <div class="relative">
+            <i class="fas fa-search search-icon"></i>
             <input type="text" id="searchInput"
-              class="w-full pl-3 ml-3 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md text-black"
+              class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black input-with-icon"
               placeholder="Поиск" autocomplete="off">
           </div>
-          <ul class="max-h-60 overflow-y-auto rounded-md shadow-sm w-full">
+          <ul class="py-1">
             {% for package in packages %}
-            <li tabindex="0" class="select-none rounded-b-md hover:bg-purple-500">
-              <a href="#" class="block px-4 py-2 text-sm text-white package-option">{{ package }}</a>
+            <li class="package-option px-4 py-2 hover:bg-purple-600 rounded-md">
+              <a href="#" class="block">{{ package }}</a>
             </li>
             {% endfor %}
           </ul>
         </div>
         <p id="selectedPackage" class="mt-2 text-sm text-gray-400"></p>
         <button type="button" id="downloadExcel"
-          class="text-white bg-gradient-to-br from-pink-500 to-orange-400 hover:bg-gradient-to-bl focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
-          Скачать Excel
-          <i class="fa-solid fa-file-csv"></i>
+          class="mt-4 flex items-center justify-center text-white bg-gradient-to-br from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 focus:outline-none focus:ring-4 focus:ring-pink-200 dark:focus:ring-pink-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center btn animate__animated animate__bounceIn">
+          <i class="fas fa-file-csv mr-2"></i> Скачать Excel
         </button>
       </div>
 
       <!-- PDF Input -->
       <div class="w-full max-w-md" id="pdfInputContainer" hidden>
-        <label for="fileInput" class="block text-sm text-gray-700 font-semibold mb-2">PDF файл</label>
-        <div
-          class="file-drop-area border-2 border-dashed border-green-400 p-4 rounded-lg cursor-pointer transition duration-200 ease-in-out hover:bg-green-50 hover:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50">
-          <span class="file-msg text-green-600 font-medium">Нажмите или перетащите файл сюда</span>
-          <input id="fileInput" type="file" class="file-input opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-            name="file" accept=".pdf" onchange="updateFileName(this)" required />
+        <label for="fileInput" class="block text-sm text-gray-300 font-semibold mb-2">PDF файл</label>
+        <div class="relative">
+          <i class="fas fa-upload input-icon"></i>
+          <div
+            class="file-drop-area border-2 border-dashed border-green-400 p-6 rounded-lg cursor-pointer transition duration-300 ease-in-out hover:bg-green-700 hover:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600 input-with-icon animate__animated animate__fadeIn">
+            <span class="file-msg text-green-400 font-medium">Нажмите или перетащите файл сюда</span>
+            <input id="fileInput" type="file" class="file-input opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+              name="file" accept=".pdf" onchange="updateFileName(this)" required />
+          </div>
         </div>
-        <p id="pdfFileName" class="mt-2 text-sm text-gray-700 truncate text-center"></p>
+        <p id="pdfFileName" class="mt-2 text-sm text-gray-300 truncate text-center"></p>
       </div>
 
       <!-- P12 Input -->
-      <div class="w-full max-w-md">
+      <div class="w-full max-w-md relative">
         <label for="keyPath" class="block text-sm text-gray-400 mb-2">Файл ЭЦП (.p12)</label>
         <label for="keyPath"
-          class="block w-full text-sm border border-gray-300 rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 p-2 text-white">
+          class="flex items-center justify-between w-full text-sm border border-gray-600 rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 p-3 transition duration-200 input-with-icon animate__animated animate__fadeIn">
+          <span id="p12FileName" class="text-gray-300">Выберите файл ЭЦП</span>
           <input id="keyPath" type="file" class="hidden" name="keyPath" accept=".p12" onchange="updateFileName(this)"
             required />
-          <span id="p12FileName" class="text-white-500">Выберите файл ЭЦП</span>
+          <i class="fas fa-file-upload text-gray-400"></i>
         </label>
-        <span id="p12FileName" class="w-full text-sm text-gray-400 truncate"></span>
       </div>
 
       <!-- Password Input -->
-      <div class="w-full max-w-md password-toggle relative">
-        <label for="password" class="block text-sm font-medium mb-2">Пароль</label>
-        <input type="password" id="password"
-          class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-          placeholder="•••••••••" required />
-        <i class="toggle-password far fa-eye-slash text-gray-400"></i>
+      <div class="w-full max-w-md relative">
+        <label for="password" class="block text-sm text-gray-400 font-semibold mb-2">Пароль</label>
+        <div class="toggle-password-container">
+          <input type="password" id="password"
+            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-200 input-with-icon"
+            placeholder="•••••••••" required />
+          <i class="toggle-password fas fa-eye-slash text-gray-400 cursor-pointer"></i>
+        </div>
       </div>
 
       <!-- Sign Button -->
-      <div>
+      <div class="w-full">
         <button type="button" onclick="signFiles()" id="signButton"
-          class="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
-          Подписать файлы
+          class="w-full flex items-center justify-center text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:to-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-3 btn animate__animated animate__fadeInUp">
+          <i class="fas fa-signature mr-2"></i> Подписать файлы
         </button>
       </div>
 
       <!-- Progress Bar -->
-      <div id="progressContainer" class="w-full max-w-md hidden">
-        <progress id="progressBar" value="0" max="100" class="w-full h-4"></progress>
-        <p id="progressText" class="text-sm text-gray-400 mt-2"></p>
+      <div id="progressContainer" class="w-full max-w-md hidden flex-col items-center space-y-2">
+        <div class="custom-progress-container">
+          <div id="customProgressBar" class="custom-progress-bar">
+            <div class="wave"></div>
+          </div>
+          <div id="progressText" class="progress-text">0%</div>
+        </div>
       </div>
     </form>
   </div>
 
   <!-- Error Alert -->
   <div id="alertContainer"
-    class="alert-container bg-red-600 fixed top-8 left-1/2 transform -translate-x-1/2 p-4 rounded shadow-lg hidden">
-    <span
-      class="close-button text-white font-bold absolute top-2 right-4 text-lg cursor-pointer transition duration-300 hover:text-black">&times;</span>
-    <strong class="block mb-2">Ошибка:</strong>
-    <span id="alertMessage"></span>
+    class="alert-container animate__animated bg-red-600 fixed top-4 left-1/2 transform -translate-x-1/2 p-4 rounded shadow-lg hidden flex items-center space-x-4">
+    <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+    <div>
+      <strong class="block mb-1">Ошибка:</strong>
+      <span id="alertMessage" class="text-white"></span>
+    </div>
+    <button class="close-button text-white font-bold text-lg focus:outline-none">&times;</button>
   </div>
 
   <!-- Success Alert -->
   <div id="successContainer"
-    class="alert-container bg-green-600 fixed top-8 left-1/2 transform -translate-x-1/2 p-4 rounded shadow-lg hidden">
-    <span
-      class="close-button text-white font-bold absolute top-2 right-4 text-lg cursor-pointer transition duration-300 hover:text-black">&times;</span>
-    <strong class="block mb-2">Успешно:</strong>
-    <span id="successMessage"></span>
+    class="success-container animate__animated bg-green-600 fixed top-4 left-1/2 transform -translate-x-1/2 p-4 rounded shadow-lg hidden flex items-center space-x-4">
+    <i class="fas fa-check-circle text-white text-2xl"></i>
+    <div>
+      <strong class="block mb-1">Успешно:</strong>
+      <span id="successMessage" class="text-white"></span>
+    </div>
+    <button class="close-button text-white font-bold text-lg focus:outline-none">&times;</button>
   </div>
+
+  <!-- JavaScript -->
   <script>
     const dropdownMenuButton = document.getElementById('dropdownMenuButton');
     const dropdownMenu = document.getElementById('dropdownMenu');
@@ -225,11 +310,21 @@
     const selectedPackageElem = document.getElementById('selectedPackage');
 
     let selectedPackage = '';
+    let progressInterval = null;
 
+    // Toggle Dropdown Menu
     dropdownMenuButton.addEventListener('click', () => {
       dropdownMenu.classList.toggle('hidden');
+      if (!dropdownMenu.classList.contains('hidden')) {
+        dropdownMenu.classList.add('animate__fadeIn');
+        dropdownMenu.classList.remove('animate__fadeOut');
+      } else {
+        dropdownMenu.classList.remove('animate__fadeIn');
+        dropdownMenu.classList.add('animate__fadeOut');
+      }
     });
 
+    // Поиск в Dropdown
     searchInput.addEventListener('keyup', () => {
       const searchTerm = searchInput.value.toLowerCase();
       listItems.forEach(listItem => {
@@ -238,19 +333,22 @@
       });
     });
 
+    // Выбор пакета
     listItems.forEach(item => {
       item.addEventListener('click', (event) => {
         event.preventDefault();
         selectedPackage = event.target.textContent.trim();
         dropdownMenuButton.querySelector('span').textContent = selectedPackage;
         selectedPackageElem.textContent = `Выбран: ${selectedPackage}`;
-        console.log(`Selected package: ${selectedPackage}`);
         dropdownMenu.classList.add('hidden');
-        pdfInputContainer.classList.add('hidden');
+        dropdownMenu.classList.remove('animate__fadeIn');
+        dropdownMenu.classList.remove('animate__fadeOut');
+        pdfInputContainer.classList.remove('hidden');
         document.getElementById("fileInput").removeAttribute("required");
       });
     });
 
+    // Скачать Excel
     document.getElementById('downloadExcel').addEventListener('click', function () {
       const selectedPackage = document.getElementById('selectedPackage').textContent.replace('Выбран: ', '').trim();
       if (!selectedPackage) {
@@ -267,7 +365,7 @@
       })
         .then(response => {
           if (!response.ok) {
-            throw new Error('Failed to download Excel file');
+            throw new Error('Не удалось скачать Excel файл');
           }
           return response.blob();
         })
@@ -281,223 +379,278 @@
           a.remove();
         })
         .catch(error => {
-          console.error('Error downloading Excel file:', error);
+          console.error('Ошибка при скачивании Excel файла:', error);
           showAlert('Ошибка при скачивании файла. Попробуйте позже.');
         });
     });
 
+    // Показать/Скрыть пароль
     const passwordInput = document.getElementById("password");
     const togglePassword = document.querySelector(".toggle-password");
 
     togglePassword.addEventListener("click", function () {
-      const type =
-        passwordInput.getAttribute("type") === "text" ? "password" : "text";
+      const type = passwordInput.getAttribute("type") === "text" ? "password" : "text";
       passwordInput.setAttribute("type", type);
-      togglePassword.classList.toggle("fa-eye-slash");
-      togglePassword.classList.toggle("fa-eye");
+      this.classList.toggle("fa-eye-slash");
+      this.classList.toggle("fa-eye");
     });
 
+    // Обновить имя файла
     function updateFileName(input) {
       const fileName = input.files[0].name;
+      const truncatedFileName = fileName.length > 15 ? fileName.substring(0, 15) + '...' : fileName;
       const id = input.id === "fileInput" ? "pdfFileName" : "p12FileName";
-      const colorClass =
-        input.id === "fileInput" ? "text-white-500 text-lg" : "text-white-500";
-      document.getElementById(
-        id
-      ).innerHTML = `<span class="${colorClass}">${fileName}</span>`;
+      document.getElementById(id).textContent = truncatedFileName;
     }
+
     let currentTaskId = null;
 
+    // Функция подписи файлов
     async function signFiles() {
-        try {
-          console.log("Starting file signing process...");
-          document.getElementById("signButton").disabled = true;
+      try {
+        console.log("Начало процесса подписи файлов...");
+        document.getElementById("signButton").disabled = true;
 
-          const keyPath = document.getElementById("keyPath");
-          const password = document.getElementById("password").value;
+        const keyPath = document.getElementById("keyPath");
+        const password = document.getElementById("password").value;
 
-          if (!selectedPackage && (!keyPath.files.length || !password.trim())) {
-            showAlert("Пожалуйста, заполните все поля формы.");
+        if (!selectedPackage && (!keyPath.files.length || !password.trim())) {
+          showAlert("Пожалуйста, заполните все поля формы.");
+          document.getElementById("signButton").disabled = false;
+          return;
+        }
+
+        const formData = new FormData();
+
+        if (selectedPackage) {
+          formData.append("package", selectedPackage);
+        } else {
+          const fileInput = document.getElementById("fileInput");
+
+          if (!fileInput.files.length || fileInput.files[0].type !== "application/pdf") {
+            showAlert("Пожалуйста, загрузите файл в формате PDF.");
             document.getElementById("signButton").disabled = false;
             return;
           }
 
-          const formData = new FormData();
-
-          if (selectedPackage) {
-            formData.append("package", selectedPackage);
-          } else {
-            const fileInput = document.getElementById("fileInput");
-
-            if (!fileInput.files.length || fileInput.files[0].type !== "application/pdf") {
-              showAlert("Пожалуйста, загрузите файл в формате PDF.");
-              document.getElementById("signButton").disabled = false;
-              return;
-            }
-
-            formData.append("file", fileInput.files[0]);
-          }
-
-          formData.append("keyPath", keyPath.files[0]);
-          formData.append("password", password);
-
-          const response = await fetch("/sign", {
-            method: "POST",
-            body: formData
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Ошибка при отправке запроса на подпись.');
-          }
-
-          const responseData = await response.json();
-          const taskId = responseData.task_id;
-          currentTaskId = taskId; 
-
-          console.log("Task ID:", taskId);
-          showSuccess("Процесс подписи запущен. Ожидайте...");
-
-          document.getElementById("progressContainer").classList.remove("hidden");
-          updateProgress(0, 'Начало обработки...');
-
-          checkTaskStatus(taskId);
-
-        } catch (error) {
-          console.error("Error in signing files:", error);
-          showAlert(
-            "Произошла ошибка при подписи файлов: " + error.message
-          );
-          document.getElementById("signButton").disabled = false;
-          resetProgressBar();
+          formData.append("file", fileInput.files[0]);
         }
-      }
 
-      function updateProgress(value, text) {
-        const progressBar = document.getElementById("progressBar");
-        const progressText = document.getElementById("progressText");
-        progressBar.value = value;
-        progressBar.style.setProperty('--progress-value', value);
-        progressText.textContent = text;
-      }
+        formData.append("keyPath", keyPath.files[0]);
+        formData.append("password", password);
 
-    function resetProgressBar() {
-      const progressBar = document.getElementById("progressBar");
-      const progressText = document.getElementById("progressText");
-      progressBar.value = 0;
-      progressText.textContent = '';
-      document.getElementById("progressContainer").classList.add("hidden");
+        const response = await fetch("/sign", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Ошибка при отправке запроса на подпись.');
+        }
+
+        const responseData = await response.json();
+        const taskId = responseData.task_id;
+        currentTaskId = taskId;
+
+        console.log("Task ID:", taskId);
+        showSuccess("Процесс подписи запущен. Ожидайте...");
+
+        document.getElementById("progressContainer").classList.remove("hidden");
+        updateProgress(0, 'Начало обработки...');
+
+        checkTaskStatus(taskId);
+
+      } catch (error) {
+        console.error("Ошибка при подписи файлов:", error);
+        showAlert("Произошла ошибка при подписи файлов: " + error.message);
+        document.getElementById("signButton").disabled = false;
+        resetProgressBar();
+      }
     }
 
+    // Обновление прогресса
+    function updateProgress(value, text) {
+      const progressBar = document.getElementById("customProgressBar");
+      const progressText = document.getElementById("progressText");
+      progressBar.style.width = `${value}%`;
+      progressText.textContent = `${value}% ${text}`;
+    }
 
+    // Сброс прогресс-бара
+    function resetProgressBar() {
+      const progressBar = document.getElementById("customProgressBar");
+      const progressText = document.getElementById("progressText");
+      progressBar.style.width = `0%`;
+      progressText.textContent = '0%';
+      document.getElementById("progressContainer").classList.add("hidden");
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+
+    // Проверка статуса задачи
     async function checkTaskStatus(taskId) {
-        try {
-          const response = await fetch(`/task_status/${taskId}`);
-          if (!response.ok) {
-            throw new Error('Ошибка при получении статуса задачи.');
-          }
-          const data = await response.json();
-
-          console.log("Task status:", data);
-
-          if (data.status === 'Pending') {
-            updateProgress(50, 'Задача в очереди...');
-            setTimeout(() => {
-              if (currentTaskId === taskId) {
-                checkTaskStatus(taskId);
-              }
-            }, 2000);
-          } else if (data.status === 'Success') {
-            updateProgress(100, 'Подпись завершена!');
-            document.getElementById("signButton").disabled = false;
-
-            let downloadLink = '';
-            if (selectedPackage) {
-              downloadLink = `https://certificates.medkrmu.kz/download?selected_path=${encodeURIComponent(selectedPackage)}`;
-            } else {
-              downloadLink = data.download_url || '#'; 
-            }
-
-            showSuccess(`Файлы успешно подписаны. Вы можете скачать их по <a href="${downloadLink}" target="_blank">ссылке</a>.`);
-
-            setTimeout(() => {
-              resetProgressBar();
-            }, 4000);
-
-          } else if (data.status === 'Error') {
-            updateProgress(0, '');
-            throw new Error(data.error || 'Ошибка при выполнении задачи.');
-          } else {
-            setTimeout(() => {
-              if (currentTaskId === taskId) {
-                checkTaskStatus(taskId);
-              }
-            }, 2000);
-          }
-        } catch (error) {
-          console.error('Error checking task status:', error);
-          showAlert('Произошла ошибка: ' + error.message);
-          document.getElementById("signButton").disabled = false;
-          resetProgressBar();
+      try {
+        const response = await fetch(`/task_status/${taskId}`);
+        if (!response.ok) {
+          throw new Error('Ошибка при получении статуса задачи.');
         }
-      }
+        const data = await response.json();
 
+        console.log("Статус задачи:", data);
 
-      function showAlert(message) {
-        const alertContainer = document.getElementById("alertContainer");
-        const alertMessage = document.getElementById("alertMessage");
-        alertMessage.textContent = message;
-        alertContainer.classList.remove("hidden");
-      }
-
-      function showSuccess(message) {
-        console.log('showSuccess called with message:', message); 
-        const successContainer = document.getElementById("successContainer");
-        const successMessage = document.getElementById("successMessage");
-        successMessage.innerHTML = message;
-        successContainer.classList.remove("hidden");
-        console.log('successContainer classes after removing hidden:', successContainer.className); 
-      }
-
-      document.getElementById("fileForm").addEventListener("submit", function (event) {
-        event.preventDefault();
-      });
-
-      document.querySelectorAll(".close-button").forEach(function (button) {
-        button.addEventListener("click", function () {
-          if (this.closest("#alertContainer")) {
-            document.getElementById("alertContainer").classList.add("hidden");
+        if (data.status === 'Pending') {
+          if (!progressInterval) {
+            progressInterval = setInterval(() => {
+              const progressBar = document.getElementById("customProgressBar");
+              let currentWidth = parseInt(progressBar.style.width) || 0;
+              if (currentWidth < 95) { // Ограничение до 95%
+                currentWidth += Math.floor(Math.random() * 3) + 1; // Увеличено плавность
+                updateProgress(currentWidth, 'Задача в очереди...');
+              } else {
+                progressBar.style.width = `95%`;
+              }
+            }, 1000); // Плавный интервал
           }
-          if (this.closest("#successContainer")) {
-            document.getElementById("successContainer").classList.add("hidden");
-          }
-        });
-      });
+          setTimeout(() => {
+            if (currentTaskId === taskId) {
+              checkTaskStatus(taskId);
+            }
+          }, 2000);
+        } else if (data.status === 'Success') {
+          updateProgress(100, 'Подпись завершена!');
+          document.getElementById("signButton").disabled = false;
+          clearInterval(progressInterval);
+          progressInterval = null;
 
+          let downloadLink = '';
+          if (selectedPackage) {
+            downloadLink = `https://certificates.medkrmu.kz/download?selected_path=${encodeURIComponent(selectedPackage)}`;
+          } else {
+            downloadLink = data.download_url || '#';
+          }
+
+          showSuccess(`Файлы успешно подписаны. Вы можете скачать их по <a href="${downloadLink}" target="_blank" class="underline">ссылке</a>.`);
+
+          setTimeout(() => {
+            resetProgressBar();
+          }, 10000); // Время отображения до 10 секунд
+
+        } else if (data.status === 'Error') {
+          updateProgress(0, '');
+          throw new Error(data.error || 'Ошибка при выполнении задачи.');
+        } else {
+          setTimeout(() => {
+            if (currentTaskId === taskId) {
+              checkTaskStatus(taskId);
+            }
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Ошибка при проверке статуса задачи:', error);
+        showAlert('Произошла ошибка: ' + error.message);
+        document.getElementById("signButton").disabled = false;
+        resetProgressBar();
+      }
+    }
+
+    // Показать ошибку
+    function showAlert(message) {
+      const alertContainer = document.getElementById("alertContainer");
+      const alertMessage = document.getElementById("alertMessage");
+      alertMessage.textContent = message;
+      alertContainer.classList.add("show");
+      alertContainer.classList.remove("hidden");
+      alertContainer.classList.remove('animate__fadeOut');
+      alertContainer.classList.add('animate__fadeIn');
+
+      // Автоматическое скрытие через 10 секунд
+      setTimeout(() => {
+        if (alertContainer.classList.contains("show")) {
+          alertContainer.classList.remove("show");
+          alertContainer.classList.add("animate__fadeOut");
+          setTimeout(() => {
+            alertContainer.classList.add("hidden");
+            alertContainer.classList.remove("animate__fadeOut");
+          }, 500); // Длительность анимации fadeOut
+        }
+      }, 10000);
+    }
+
+    // Показать успех
+    function showSuccess(message) {
+      console.log('showSuccess called with message:', message);
+      const successContainer = document.getElementById("successContainer");
+      const successMessage = document.getElementById("successMessage");
+      successMessage.innerHTML = message;
+      successContainer.classList.add("show");
+      successContainer.classList.remove("hidden");
+      successContainer.classList.remove('animate__fadeOut');
+      successContainer.classList.add('animate__fadeIn');
+      console.log('successContainer classes после удаления hidden:', successContainer.className);
+
+      // Автоматическое скрытие через 10 секунд
+      setTimeout(() => {
+        if (successContainer.classList.contains("show")) {
+          successContainer.classList.remove("show");
+          successContainer.classList.add("animate__fadeOut");
+          setTimeout(() => {
+            successContainer.classList.add("hidden");
+            successContainer.classList.remove("animate__fadeOut");
+          }, 500); // Длительность анимации fadeOut
+        }
+      }, 10000);
+    }
+
+    // Предотвращение отправки формы по умолчанию
+    document.getElementById("fileForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+    });
+
+    // Закрытие алертов
+    document.querySelectorAll(".close-button").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const parent = this.closest(".alert-container, .success-container");
+        if (parent) {
+          parent.classList.remove("show");
+          parent.classList.add("animate__fadeOut");
+          setTimeout(() => {
+            parent.classList.add("hidden");
+            parent.classList.remove("animate__fadeOut");
+          }, 500); // Длительность анимации fadeOut
+        }
+      });
+    });
+
+    // Drag & Drop для PDF файла
     const fileDropArea = document.querySelector('.file-drop-area');
     const fileInput = document.getElementById('fileInput');
 
     fileDropArea.addEventListener('dragover', (e) => {
       e.preventDefault();
-      fileDropArea.classList.add('bg-gray-600');
+      fileDropArea.classList.add('bg-green-600');
+      fileDropArea.classList.add('animate__animated', 'animate__pulse');
     });
 
     fileDropArea.addEventListener('dragleave', () => {
-      fileDropArea.classList.remove('bg-gray-600');
+      fileDropArea.classList.remove('bg-green-600');
+      fileDropArea.classList.remove('animate__animated', 'animate__pulse');
     });
 
     fileDropArea.addEventListener('drop', (e) => {
       e.preventDefault();
-      fileDropArea.classList.remove('bg-gray-600');
+      fileDropArea.classList.remove('bg-green-600');
+      fileDropArea.classList.remove('animate__animated', 'animate__pulse');
       const files = e.dataTransfer.files;
       if (files.length > 0 && files[0].type === "application/pdf") {
         fileInput.files = files;
         updateFileName(fileInput);
       }
       else {
-        showAlert("Разрешается загружать только PDF-файлы.")
+        showAlert("Разрешается загружать только PDF-файлы.");
       }
-    })
+    });
+
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
       if (file && file.type !== 'application/pdf') {
