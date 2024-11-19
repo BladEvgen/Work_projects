@@ -16,6 +16,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table
 
+
 import logger
 
 logger = logging.getLogger(__name__)
@@ -48,9 +49,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 def get_packages() -> list:
-    query = (
-        "SELECT package_name FROM packages WHERE signed_status = 1 ORDER BY date DESC"
-    )
+    query = "SELECT package_name FROM packages WHERE signed_status = 1 ORDER BY date DESC"
     result = execute_query(query, db=db_connection_certificate)
     return [row[0] for row in result] if result else []
 
@@ -66,9 +65,7 @@ def save_to_database(
     return result[0][0] if result else None
 
 
-def execute_query(
-    query: str, params: tuple = None, db: mysql.connector.connect = None
-) -> list:
+def execute_query(query: str, params: tuple = None, db: mysql.connector.connect = None) -> list:
     cursor = db.cursor()
     try:
         cursor.execute(query, params)
@@ -103,9 +100,7 @@ def update_signed_status(filenames):
         return
 
     placeholders = ", ".join(["%s"] * len(filenames))
-    update_query = (
-        f"UPDATE certificate SET signed_status = 2 WHERE filename IN ({placeholders})"
-    )
+    update_query = f"UPDATE certificate SET signed_status = 2 WHERE filename IN ({placeholders})"
 
     try:
         with db_connection_certificate.cursor() as cursor:
@@ -122,7 +117,7 @@ def update_signed_status(filenames):
 def print_verification_info(verification_result: dict) -> dict:
     status = verification_result.get("status", 0)
     signers = verification_result.get("signers", [])
-
+    logger.info("Verification result received", extra={"signers": signers, "status": status})
     if status == 200:
         for signer in signers:
             for certificate in signer.get("certificates", []):
@@ -131,9 +126,7 @@ def print_verification_info(verification_result: dict) -> dict:
                 public_key = certificate.get("publicKey", "")
 
                 if "ORGANIZATION" not in certificate.get("keyUser", []):
-                    logger.error(
-                        "Invalid ECP key: Missing required organization permission."
-                    )
+                    logger.error("Invalid ECP key: Missing required organization permission.")
                     return None
 
                 if organization:
@@ -142,9 +135,9 @@ def print_verification_info(verification_result: dict) -> dict:
                         gen_time = datetime.datetime.strptime(
                             gen_time_str, "%Y-%m-%dT%H:%M:%S.%f%z"
                         )
-                        formatted_gen_time = (
-                            gen_time + datetime.timedelta(hours=5)
-                        ).strftime("%d.%m.%Y %H:%M")
+                        formatted_gen_time = (gen_time + datetime.timedelta(hours=5)).strftime(
+                            "%d.%m.%Y %H:%M"
+                        )
                         return {
                             "organization": organization,
                             "common_name": common_name,
@@ -152,9 +145,7 @@ def print_verification_info(verification_result: dict) -> dict:
                             "formatted_gen_time": formatted_gen_time,
                         }
                 else:
-                    logger.error(
-                        "Error: Missing organization information in the certificate."
-                    )
+                    logger.error("Error: Missing organization information in the certificate.")
                     return None
     else:
         logger.error("Verification status is not successful.")
@@ -190,9 +181,7 @@ def sign_file_gos(key: str, password: str, file: Union[str, bytes]) -> tuple:
 
         data = {
             "data": encoded_file,
-            "signers": [
-                {"key": base64_key_string, "password": password, "keyAlias": None}
-            ],
+            "signers": [{"key": base64_key_string, "password": password, "keyAlias": None}],
             "withTsp": True,
             "tsaPolicy": "TSA_GOST_POLICY",
             "detached": False,
@@ -259,9 +248,7 @@ def process_pdf(original_pdf: bytes, verification_info: dict) -> bytes:
         [
             Paragraph("Ключ", styleH),
             Paragraph(
-                verification_info["public_key"][0:7]
-                + "..."
-                + verification_info["public_key"][-9:],
+                verification_info["public_key"][0:7] + "..." + verification_info["public_key"][-9:],
                 styleN,
             ),
         ],
@@ -275,9 +262,7 @@ def process_pdf(original_pdf: bytes, verification_info: dict) -> bytes:
         ],
         [
             Paragraph("Время подписания", styleH),
-            Paragraph(
-                verification_info.get("formatted_gen_time", current_time), styleN
-            ),
+            Paragraph(verification_info.get("formatted_gen_time", current_time), styleN),
         ],
     ]
 

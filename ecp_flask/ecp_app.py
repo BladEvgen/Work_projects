@@ -102,9 +102,7 @@ def sign_file():
     if package:
         logger.info(f"Package for path: {package}")
 
-        directory = (
-            f"/var/www/kirill/certificates.medkrmu/cert_date_base/{package}/pdf/"
-        )
+        directory = f"/var/www/kirill/certificates.medkrmu/cert_date_base/{package}/pdf/"
         signed_folder = directory
         logger.info(f"Looking for files in directory {directory}")
         os.makedirs(directory, exist_ok=True)
@@ -196,9 +194,7 @@ def verify_data():
         data_to_verify = base64.b64encode(f.read()).decode("utf-8")
 
     url = "http://localhost:14579/cms/verify"
-    response = requests.post(
-        url, json={"revocationCheck": ["OCSP"], "cms": data_to_verify}
-    )
+    response = requests.post(url, json={"revocationCheck": ["OCSP"], "cms": data_to_verify})
     return jsonify(response.json())
 
 
