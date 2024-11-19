@@ -168,6 +168,39 @@
       color: #ffffff;
       pointer-events: none;
     }
+
+    /* Контейнер для пузырьков */
+    .bubbles-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    /* Стиль пузырьков */
+    .bubble {
+      position: absolute;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      opacity: 0.8;
+      animation: floatBubble linear forwards;
+    }
+
+    @keyframes floatBubble {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: translateY(-100px) scale(1.5);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 
@@ -271,6 +304,7 @@
         <div class="custom-progress-container">
           <div id="customProgressBar" class="custom-progress-bar">
             <div class="wave"></div>
+            <div class="bubbles-container"></div>
           </div>
           <div id="progressText" class="progress-text">0%</div>
         </div>
@@ -311,6 +345,7 @@
 
     let selectedPackage = '';
     let progressInterval = null;
+    let bubbleInterval = null;
 
     // Toggle Dropdown Menu
     dropdownMenuButton.addEventListener('click', () => {
@@ -408,7 +443,6 @@
     // Функция подписи файлов
     async function signFiles() {
       try {
-        console.log("Начало процесса подписи файлов...");
         document.getElementById("signButton").disabled = true;
 
         const keyPath = document.getElementById("keyPath");
@@ -453,11 +487,11 @@
         const taskId = responseData.task_id;
         currentTaskId = taskId;
 
-        console.log("Task ID:", taskId);
         showSuccess("Процесс подписи запущен. Ожидайте...");
 
         document.getElementById("progressContainer").classList.remove("hidden");
         updateProgress(0, 'Начало обработки...');
+        startBubbleAnimation(); // Запуск анимации пузырьков
 
         checkTaskStatus(taskId);
 
@@ -475,6 +509,8 @@
       const progressText = document.getElementById("progressText");
       progressBar.style.width = `${value}%`;
       progressText.textContent = `${value}% ${text}`;
+
+      adjustBubbleRate(value); // Регулировка частоты пузырьков
     }
 
     // Сброс прогресс-бара
@@ -485,10 +521,13 @@
       progressText.textContent = '0%';
       document.getElementById("progressContainer").classList.add("hidden");
       clearInterval(progressInterval);
+      clearInterval(bubbleInterval);
       progressInterval = null;
+      bubbleInterval = null;
+      clearBubbles(); // Удаление всех пузырьков
     }
 
-    // Проверка статуса задачи
+    // Функция проверки статуса задачи
     async function checkTaskStatus(taskId) {
       try {
         const response = await fetch(`/task_status/${taskId}`);
@@ -497,15 +536,13 @@
         }
         const data = await response.json();
 
-        console.log("Статус задачи:", data);
-
         if (data.status === 'Pending') {
           if (!progressInterval) {
             progressInterval = setInterval(() => {
               const progressBar = document.getElementById("customProgressBar");
               let currentWidth = parseInt(progressBar.style.width) || 0;
-              if (currentWidth < 95) { // Ограничение до 95%
-                currentWidth += Math.floor(Math.random() * 3) + 1; // Увеличено плавность
+              if (currentWidth < 95) {
+                currentWidth += Math.floor(Math.random() * 3) + 1;
                 updateProgress(currentWidth, 'Задача в очереди...');
               } else {
                 progressBar.style.width = `95%`;
@@ -522,6 +559,9 @@
           document.getElementById("signButton").disabled = false;
           clearInterval(progressInterval);
           progressInterval = null;
+          clearInterval(bubbleInterval);
+          bubbleInterval = null;
+          clearBubbles(); // Удаление всех пузырьков
 
           let downloadLink = '';
           if (selectedPackage) {
@@ -557,14 +597,27 @@
     // Показать ошибку
     function showAlert(message) {
       const alertContainer = document.getElementById("alertContainer");
+      const successContainer = document.getElementById("successContainer");
       const alertMessage = document.getElementById("alertMessage");
       alertMessage.textContent = message;
+
+      if (
+        successContainer.classList.contains("show") &&
+        alertContainer.compareDocumentPosition(successContainer) & Node.DOCUMENT_POSITION_FOLLOWING
+      ) {
+        successContainer.classList.remove("show");
+        successContainer.classList.add("animate__fadeOut");
+        setTimeout(() => {
+          successContainer.classList.add("hidden");
+          successContainer.classList.remove("animate__fadeOut");
+        }, 500);
+      }
+
       alertContainer.classList.add("show");
       alertContainer.classList.remove("hidden");
-      alertContainer.classList.remove('animate__fadeOut');
-      alertContainer.classList.add('animate__fadeIn');
+      alertContainer.classList.remove("animate__fadeOut");
+      alertContainer.classList.add("animate__fadeIn");
 
-      // Автоматическое скрытие через 10 секунд
       setTimeout(() => {
         if (alertContainer.classList.contains("show")) {
           alertContainer.classList.remove("show");
@@ -572,14 +625,14 @@
           setTimeout(() => {
             alertContainer.classList.add("hidden");
             alertContainer.classList.remove("animate__fadeOut");
-          }, 500); // Длительность анимации fadeOut
+          }, 500);
         }
       }, 10000);
     }
 
+
     // Показать успех
     function showSuccess(message) {
-      console.log('showSuccess called with message:', message);
       const successContainer = document.getElementById("successContainer");
       const successMessage = document.getElementById("successMessage");
       successMessage.innerHTML = message;
@@ -587,7 +640,6 @@
       successContainer.classList.remove("hidden");
       successContainer.classList.remove('animate__fadeOut');
       successContainer.classList.add('animate__fadeIn');
-      console.log('successContainer classes после удаления hidden:', successContainer.className);
 
       // Автоматическое скрытие через 10 секунд
       setTimeout(() => {
@@ -660,6 +712,61 @@
         updateFileName(fileInput);
       }
     });
+
+    // Функции для анимации пузырьков
+
+    // Создание пузырька
+    function createBubble() {
+      const bubblesContainer = document.querySelector('.bubbles-container');
+      const bubble = document.createElement('div');
+      const size = Math.random() * 10 + 5; // Размер от 5px до 15px
+      const position = Math.random() * 100; // Позиция по горизонтали (в процентах)
+      const duration = Math.random() * 3 + 2; // Длительность анимации от 2s до 5s
+      const delay = Math.random() * 2; // Задержка появления
+
+      bubble.classList.add('bubble');
+      bubble.style.width = `${size}px`;
+      bubble.style.height = `${size}px`;
+      bubble.style.left = `${position}%`;
+      bubble.style.animationDuration = `${duration}s`;
+      bubble.style.animationDelay = `${delay}s`;
+      bubble.style.opacity = Math.random() * 0.5 + 0.5; // Прозрачность от 0.5 до 1
+
+      bubblesContainer.appendChild(bubble);
+
+      // Удаление пузырька после завершения анимации
+      bubble.addEventListener('animationend', () => {
+        bubblesContainer.removeChild(bubble);
+      });
+    }
+
+    // Запуск генерации пузырьков
+    function startBubbleAnimation() {
+      // Начальная частота: один пузырек каждые 500ms
+      bubbleInterval = setInterval(() => {
+        createBubble();
+      }, 500);
+    }
+
+    // Регулировка частоты генерации пузырьков в зависимости от прогресса
+    function adjustBubbleRate(progress) {
+      if (progress < 50) {
+        clearInterval(bubbleInterval);
+        bubbleInterval = setInterval(createBubble, 500);
+      } else if (progress < 80) {
+        clearInterval(bubbleInterval);
+        bubbleInterval = setInterval(createBubble, 300);
+      } else {
+        clearInterval(bubbleInterval);
+        bubbleInterval = setInterval(createBubble, 100);
+      }
+    }
+
+    // Очистка всех пузырьков
+    function clearBubbles() {
+      const bubblesContainer = document.querySelector('.bubbles-container');
+      bubblesContainer.innerHTML = '';
+    }
   </script>
 </body>
 
